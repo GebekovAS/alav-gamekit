@@ -1,11 +1,11 @@
-# R36T game kit - instructions for AI agents
+# ALAV Gamekit - instructions for AI agents
 
-You make games for the **R36T handheld console**. Follow this file exactly. It is complete:
+You make games for **handheld consoles running ALAV Store**. Follow this file exactly. It is complete:
 you do not need to search the web or read the kit's source.
 
 ## If you were asked to download, install or prepare this kit
 
-This kit usually sits inside a user's project folder (for example `my-project/r36t-gamekit/`).
+This kit usually sits inside a user's project folder (for example `my-project/alav-gamekit/`).
 Agent sessions start in the project folder, where these instructions would not be seen. So finish
 the preparation with one command, run inside the kit folder:
 
@@ -48,11 +48,12 @@ and do not add `sys.path` tricks to the game.
 
 ## Hard rules
 
-- The game is **one process, pure Python 3.11, standard library + `import r36t as g` only**.
+- The game is **one process, pure Python 3.11, standard library + `import alav as g` only**.
   No pygame, numpy, pip packages, no `input()`, no threads, no web requests.
 - **Never write your own main loop** and never call `time.sleep`. Define `update(dt)` and
   `draw()` and call `g.run(update, draw, "Title")` as the last line of `main.py`.
 - The screen is always **600 x 440** pixels: `g.W`, `g.H`. (0, 0) is the top-left corner.
+  Consoles differ; the kit stretches this picture to the real screen, keeping its shape.
 - **Multiply every movement by `dt`** (seconds since the last frame): `x += speed * dt`.
 - The console is slow (about 30x slower than a PC). Keep it light:
   at most ~100 moving objects, at most 400 draw calls per frame, no loops over every pixel,
@@ -70,7 +71,7 @@ and do not add `sys.path` tricks to the game.
 ## Game skeleton
 
 ```python
-import r36t as g
+import alav as g
 
 state = "title"          # "title" -> "play" -> "over"
 x, score = 300.0, 0
@@ -166,9 +167,13 @@ net.peers                           # a dict keyed by player id: use `for pid in
 
 - Messages are dicts/lists/numbers/strings. Dict keys become **strings** on the other side:
   use string ids (`"0"`, `"1"`) for players.
-- In the menu: `A - host`, `B - join`. Also start directly when the tools ask for it:
-  `if g.ROLE: begin(g.ROLE)` (`g.ROLE` is `"host"`, `"join"` or `None`). Without this line
-  `python tool.py check my-game --net` cannot test the game.
+- In the menu: `A - host`, `B - join`. Also start directly, without the menu, when the game was
+  started for one role: `if g.ROLE: begin(g.ROLE)` (`g.ROLE` is `"host"`, `"join"` or `None`).
+  It is `"join"` when the player picked a running match in the ALAV Store lobby; `g.join(name)`
+  then connects to that match by itself. Without this line the lobby cannot bring a player in and
+  `python tool.py check my-game --net` fails.
+- A hosting game is listed in the ALAV Store lobby automatically (folder name, title from
+  `game.json`, number of players). The name must not start with `*`.
 - A player can leave at any moment: use `.get()` for ids, never assume a player exists.
 - Try it on one PC: `python tool.py run my-game --net` opens two windows (click one to control it).
 
@@ -184,9 +189,12 @@ net.peers                           # a dict keyed by player id: use `for pid in
 | `ValueError: sprite rows...` | all rows of a sprite must have the same length |
 | Removing from a list while looping | loop over a copy: `for b in bullets[:]:` |
 
-## Facts about the console
+## Facts about the consoles
 
-- Screen 600 x 440, CPU RK3326 (4 slow cores), Python 3.11, EmuELEC, SDL2.
+- Games draw on a 600 x 440 screen; on a console with another screen the picture is scaled to fit,
+  with bars at the sides if the shape differs.
+- Measured on the reference console, the R36T: CPU RK3326 (4 slow cores), about 30x slower than
+  a PC, Python 3.11, EmuELEC, SDL2. Other consoles are similar; write for this one.
 - Buttons: d-pad, A (right), B (bottom), X (top), Y (left), L1/R1/L2/R2, START, SELECT, left stick.
 - PC keys for testing: arrows, X = A, Z = B, S = X, A = Y, Q/W = L1/R1, Enter = START,
   Backspace = SELECT, Esc = quit.
@@ -195,11 +203,11 @@ net.peers                           # a dict keyed by player id: use `for pid in
 ## Trying the game on the real console (developer mode)
 
 Only when the user gives you the console address. The user switches it on in
-**R36T Store -> Settings -> developer mode**; the screen then shows the address.
-Set it on the PC as the environment variable `R36T_HOST`, then use the commands below.
+**ALAV Store -> Settings -> developer mode**; the screen then shows the address.
+Set it on the PC as the environment variable `ALAV_HOST`, then use the commands below.
 The first command from a new PC waits: the console asks "trust this device?" and the user must
-press A in the R36T Store. Tell the user to do that. After it nothing is asked again.
-(Alternative without the question: also set `R36T_CODE` to the code shown in Settings.)
+press A in the ALAV Store. Tell the user to do that. After it nothing is asked again.
+(Alternative without the question: also set `ALAV_CODE` to the code shown in Settings.)
 
 | Command | What it does |
 | --- | --- |
@@ -212,3 +220,26 @@ press A in the R36T Store. Tell the user to do that. After it nothing is asked a
 
 Debug loop: `deploy --bot` -> wait 10 seconds -> `--shot` and `--logs` -> fix -> repeat.
 If deploy says it cannot reach the console, ask the user to wake it; do not retry more than twice.
+
+## Publishing in the ALAV Store
+
+Only when the user asks to put the game in the store. The user registers as a developer at
+https://alav.online/developers, creates a key there and sets it on the PC as the environment
+variable `ALAV_KEY`. Never ask the user to paste the key into the chat and never write it to a file.
+
+| Command | What it does |
+| --- | --- |
+| `python tool.py publish my-game` | upload the game as a **draft**: only the developer sees it |
+| `python tool.py publish my-game --release` | upload and publish for everyone; if this version is already a draft, publish that draft |
+
+- **Never use `--release` unless the user asked to publish the game for everyone.** "Upload",
+  "send to the store", "try it in the store" mean a draft: run the command without `--release`.
+- Before it: `check` prints `PASS`, and `games/my-game/icon.png` exists - a real picture of the game,
+  PNG, at most 128 x 128 pixels and 64 KiB (the command refuses a bigger one).
+- `game.json` fields the store uses: `"title"`, `"version"`, and optional `"description"` (one or two
+  sentences), `"genre"` and `"kind"` (`"game"`, the default, or `"app"`). Genres of a game: Шутеры,
+  Спорт, Гонки, Файтинги, Платформеры, Аркады, Головоломки, RPG, Стратегии; of an app: ИИ,
+  Инструменты, Мультимедиа, Система. Without `"genre"` the store shows «Другое».
+- A published version cannot be replaced: raise `"version"` for the next one. A draft can: running
+  the command again replaces the draft of the same version.
+- If the command prints an error from the store, show it to the user; do not retry more than twice.

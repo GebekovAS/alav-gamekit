@@ -7,7 +7,7 @@ Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 
-import r36t as g
+import alav as g
 
 T = 32               # tile size
 OX, OY = 20, 12      # where the 13x13 field starts on screen

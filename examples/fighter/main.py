@@ -8,7 +8,7 @@ Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 
-import r36t as g
+import alav as g
 
 FLOOR = 360
 BODY = [

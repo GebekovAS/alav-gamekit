@@ -1,6 +1,6 @@
 ---
 name: ship-game
-description: Package an R36T game for the console (SD card file, store zip) or send it to the console over Wi-Fi. Use when the user wants to install, try on the console, or publish a game.
+description: Package an ALAV Store game for the console (SD card file, store zip) or send it to the console over Wi-Fi. Use when the user wants to install, try on the console, or publish a game.
 ---
 
 1. The check must pass first: `python tool.py check <slug>`.
@@ -9,9 +9,14 @@ description: Package an R36T game for the console (SD card file, store zip) or s
 3. `python tool.py pack <slug>` creates:
    - `dist/<Title>.sh` - one file. The user copies it to `ports_scripts` on the SD card and starts
      it from the **Ports** menu; it installs itself to `/storage/apps/<slug>` on first start.
-   - `dist/<slug>-<version>.zip` - the format of the R36T Store (`main.py` in the root).
-4. Only if the user gave the console address (developer mode in R36T Store -> Settings),
-   set `R36T_HOST` (the first time the user confirms this PC on the console with A) and use the `deploy` commands from the section
+   - `dist/ALAV-<slug>-<version>-linux-arm64.zip` - the format of the ALAV Store (`main.py` in the root).
+4. Only if the user gave the console address (developer mode in ALAV Store -> Settings),
+   set `ALAV_HOST` (the first time the user confirms this PC on the console with A) and use the `deploy` commands from the section
    "Trying the game on the real console" of `AGENTS.md` (`deploy`, `--check`, `--bot`, `--shot`, `--logs`).
-5. For the store an `icon.png` (square, not a placeholder letter) is needed in `games/<slug>/`.
+5. Only if the user asked to put the game in the ALAV Store: `games/<slug>/icon.png` must exist (square,
+   not a placeholder letter, PNG, at most 128x128 px and 64 KiB) and the user must have set `ALAV_KEY`
+   (a developer key from https://alav.online/developers; never ask for it in the chat). Then
+   `python tool.py publish <slug>` uploads a **draft** that only the developer sees.
+   `python tool.py publish <slug> --release` makes it visible to everyone - **use `--release` only when
+   the user asked to publish for everyone**. Details: section "Publishing in the ALAV Store" of `AGENTS.md`.
 6. Tell the user which files were created and how to install them. Quit a game with SELECT+START.

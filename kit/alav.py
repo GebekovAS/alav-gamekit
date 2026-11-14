@@ -1,9 +1,9 @@
-"""r36t - tiny game library for the R36T handheld. The same game runs in a PC window.
+"""alav - tiny game library for handheld consoles running ALAV Store. The same game runs in a PC window.
 
 Python 3.11 standard library + SDL2 through ctypes.
 Writing a game? Do not read this file: AGENTS.md has the rules and the whole API on one page.
 
-    import r36t as g
+    import alav as g
 
     def update(dt): ...
     def draw(): ...
@@ -20,17 +20,26 @@ import socket
 import sys
 import time
 
-W, H = 600, 440  # the R36T screen, in pixels; every game draws in these coordinates
+W, H = 600, 440  # the logical screen: every game draws in these coordinates; SDL scales it to the real screen
 GAME_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 DEVICE = os.path.isdir("/storage/.config/emulationstation")
-CHECK = int(os.environ.get("R36T_CHECK", "0"))  # >0: headless self-test for that many frames
-BOT = CHECK or bool(os.environ.get("R36T_BOT"))  # random buttons instead of the pad
-ROLE = os.environ.get("R36T_ROLE") or next((a for a in sys.argv[1:] if a in ("host", "join")), None)
+CHECK = int(os.environ.get("ALAV_CHECK", "0"))  # >0: headless self-test for that many frames
+BOT = CHECK or bool(os.environ.get("ALAV_BOT"))  # random buttons instead of the pad
+
+
+def _ipv4(s):
+    parts = s.split(".")
+    return len(parts) == 4 and all(p.isascii() and p.isdigit() and len(p) <= 3 and int(p) < 256 for p in parts)
+
+
+# ALAV_JOIN=<host ip>: the store lobby started this game to join that match (anything but an IPv4 is ignored)
+_JOIN = os.environ.get("ALAV_JOIN") if _ipv4(os.environ.get("ALAV_JOIN", "")) else None
+ROLE = os.environ.get("ALAV_ROLE") or ("join" if _JOIN else next((a for a in sys.argv[1:] if a in ("host", "join")), None))
 
 WHITE, BLACK, GRAY = (255, 255, 255), (0, 0, 0), (128, 128, 128)
 RED, GREEN, BLUE, YELLOW = (230, 60, 60), (70, 200, 90), (70, 130, 255), (250, 210, 60)
 
-# Built-in pad of the R36T (SDL joystick "play_joystick"), then the PC keyboard (SDL scancodes).
+# Built-in pad as numbered on the R36T, the reference device (SDL joystick "play_joystick"), then the PC keyboard (SDL scancodes).
 BUTTONS = {"B": 0, "A": 1, "X": 2, "Y": 3, "L1": 4, "R1": 5, "L2": 6, "R2": 7,
            "SELECT": 8, "START": 9, "UP": 14, "DOWN": 15, "LEFT": 16, "RIGHT": 17}
 KEYS = {"UP": 82, "DOWN": 81, "LEFT": 80, "RIGHT": 79, "A": 27, "B": 29, "X": 22, "Y": 4,
@@ -47,7 +56,7 @@ def _lib(name):
         return C.CDLL("lib%s-2.0.so.0" % name)  # the console
     except OSError:
         pass
-    folder = os.environ.get("R36T_SDL_DIR")  # set by tool.py, which downloads SDL2 when it is missing
+    folder = os.environ.get("ALAV_SDL_DIR")  # set by tool.py, which downloads SDL2 when it is missing
     if not (folder and os.path.isdir(folder)):
         try:
             import sdl2dll
@@ -104,6 +113,7 @@ _DrawLine = _fn(_sdl, "SDL_RenderDrawLine", _I, _P, _I, _I, _I, _I)
 _CopyEx = _fn(_sdl, "SDL_RenderCopyEx", _I, _P, _P, _RECT, _RECT, C.c_double, _P, _I)
 _Present = _fn(_sdl, "SDL_RenderPresent", None, _P)
 _ReadPixels = _fn(_sdl, "SDL_RenderReadPixels", _I, _P, _P, _U32, _P, _I)
+_OutputSize = _fn(_sdl, "SDL_GetRendererOutputSize", _I, _P, C.POINTER(C.c_int), C.POINTER(C.c_int))
 _TexFromSurf = _fn(_sdl, "SDL_CreateTextureFromSurface", _P, _P, _SURF)
 _DestroyTexture = _fn(_sdl, "SDL_DestroyTexture", None, _P)
 _FreeSurface = _fn(_sdl, "SDL_FreeSurface", None, _SURF)
@@ -132,7 +142,7 @@ _before = dict(_now)
 _draws = 0
 _said = []  # check mode: the text drawn in the current frame, for the text view of screenshots
 _net_peak = 0
-_bot = random.Random(int(os.environ.get("R36T_SEED", "1")))  # check-mode button masher
+_bot = random.Random(int(os.environ.get("ALAV_SEED", "1")))  # check-mode button masher
 
 
 def _init(title):
@@ -253,7 +263,7 @@ def sprite(rows, palette):
     rows: list of equal-length strings, one character per pixel; "." and " " are transparent.
     palette: {"character": (r, g, b)}.
     """
-    _init("R36T game")
+    _init("ALAV game")
     w, h = len(rows[0]), len(rows)
     data = bytearray()
     for row in rows:
@@ -267,7 +277,7 @@ def sprite(rows, palette):
 
 def image(name):
     """Load a PNG from the game's assets/ folder (cached). Returns a Sprite."""
-    _init("R36T game")
+    _init("ALAV game")
     if name not in _images:
         path = os.path.join(GAME_DIR, "assets", name)
         surf = _IMG_Load(path.encode())
@@ -407,12 +417,28 @@ def quit():
 # ---------------------------------------------------------------- network
 
 NET_PORT = 36036
+_SLUG = "abcdefghijklmnopqrstuvwxyz0123456789"  # a store slug is [a-z0-9][a-z0-9_-]{0,39}
+
+
+def _lobby_reply(slug, title, players):
+    """Answer to the store lobby probe b"ALAV?*": at most 250 bytes, or None when the folder is not a store slug."""
+    if not (0 < len(slug) <= 40 and slug[0] in _SLUG and all(ch in _SLUG + "_-" for ch in slug)):
+        return None
+    title = title[:40]
+    while True:
+        data = b"ALAV!*" + json.dumps({"slug": slug, "name": title, "players": players},
+                                      ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace")
+        if len(data) <= 250:
+            return data
+        title = title[:-1]
 
 
 class Net:
     """LAN link between consoles. Make one with host() or join(); see AGENTS.md "Network games"."""
 
     def __init__(self, name, is_host, ip=None):
+        if not name or name.startswith("*"):  # b"ALAV?*" is the store lobby probe
+            raise ValueError("network game name must not be empty or start with '*'")
         self.name, self.is_host, self.ip = name.encode(), is_host, ip
         self.peers = {}  # id -> [socket, unparsed bytes]; a client sees the host as id 0
         self._next_id, self._retry = 1, 0.0
@@ -424,6 +450,12 @@ class Net:
             self.srv.bind(("", NET_PORT))
             self.srv.listen(8)
             self.udp.bind(("", NET_PORT))
+            self.slug = self.title = os.path.basename(GAME_DIR)  # what the store lobby is told
+            try:
+                with open(os.path.join(GAME_DIR, "game.json"), encoding="utf-8") as f:
+                    self.title = str(json.load(f)["title"])
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
 
     @property
     def connected(self):
@@ -446,9 +478,16 @@ class Net:
                 self._add(self.srv.accept()[0], self._next_id)
                 self._next_id += 1
             while self._readable(self.udp):
-                data, addr = self.udp.recvfrom(256)
-                if data == b"R36T?" + self.name:
-                    self.udp.sendto(b"R36T!" + self.name, addr)
+                try:  # datagrams come from anyone on the network: a bad one must not stop the game
+                    data, addr = self.udp.recvfrom(256)
+                    if data == b"ALAV?*":  # the store lobby asks who is hosting
+                        reply = _lobby_reply(self.slug, self.title, len(self.peers) + 1)
+                        if reply:
+                            self.udp.sendto(reply, addr)
+                    elif data == b"ALAV?" + self.name:
+                        self.udp.sendto(b"ALAV!" + self.name, addr)
+                except OSError:
+                    pass
         elif not self.peers and time.monotonic() >= self._retry:
             self._retry = time.monotonic() + 0.5
             try:
@@ -466,12 +505,12 @@ class Net:
                     pass
                 for target in targets:
                     try:
-                        self.udp.sendto(b"R36T?" + self.name, (target, NET_PORT))
+                        self.udp.sendto(b"ALAV?" + self.name, (target, NET_PORT))
                     except OSError:
                         pass
                 while self._readable(self.udp):
                     data, addr = self.udp.recvfrom(256)
-                    if data == b"R36T!" + self.name:
+                    if data == b"ALAV!" + self.name:
                         self._add(socket.create_connection((addr[0], NET_PORT), timeout=0.3), 0)
                         return
             except OSError:
@@ -516,20 +555,27 @@ def host(name):
 
 
 def join(name, ip=None):
-    """Find a host of the game `name` on the local network (or connect straight to ip)."""
-    return Net(name, False, ip or os.environ.get("R36T_PEER"))
+    """Find a host of the game `name` on the local network (or connect straight to ip).
+
+    Started by the store lobby (env ALAV_JOIN=<host ip>, then ROLE is "join"): connects to that host.
+    """
+    return Net(name, False, ip or _JOIN)
 
 
 # ---------------------------------------------------------------- main loop
 
 def _screenshot(path):
-    buf = C.create_string_buffer(W * H * 4)
-    _ReadPixels(_ren, None, _RGBA32, buf, W * 4)
-    surf = _SurfFrom(buf, W, H, 32, W * 4, _RGBA32)
+    # the real screen may be larger than W x H (the picture is scaled up): read what is really there
+    ow, oh = C.c_int(), C.c_int()
+    _OutputSize(_ren, C.byref(ow), C.byref(oh))
+    ow, oh = ow.value or W, oh.value or H
+    buf = C.create_string_buffer(ow * oh * 4)
+    _ReadPixels(_ren, C.byref(_Rect(0, 0, ow, oh)), _RGBA32, buf, ow * 4)
+    surf = _SurfFrom(buf, ow, oh, 32, ow * 4, _RGBA32)
     _IMG_SavePNG(surf, path.encode())
     _FreeSurface(surf)
     raw = buf.raw
-    if CHECK:  # the same picture as text, for models that cannot look at images
+    if CHECK and (ow, oh) == (W, H):  # the same picture as text, for models that cannot look at images
         cells = [[raw[((r * 20 + 10) * W + c * 10 + 5) * 4:][:3] for c in range(W // 10)] for r in range(H // 20)]
         count = {}
         for row in cells:
@@ -546,10 +592,10 @@ def _screenshot(path):
             lines.append("  %r at x=%d y=%d, size %dx%d%s" % (s, x, y, tw, th, "" if inside else "   <-- PARTLY OFF SCREEN"))
         with open(path[:-4] + ".txt", "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-    return len(set(raw[i:i + 3] for i in range(0, W * H * 4, 4 * 37)))
+    return len(set(raw[i:i + 3] for i in range(0, len(raw), 4 * 37)))
 
 
-def run(update, draw, title="R36T game"):
+def run(update, draw, title="ALAV game"):
     """Run the game: every frame calls update(dt) (dt = seconds since the last frame), then draw().
 
     SELECT+START always quits, so a player can never get stuck in a game.
@@ -558,7 +604,7 @@ def run(update, draw, title="R36T game"):
     _init(title)
     _running = True
     event = C.create_string_buffer(64)
-    shots = os.environ.get("R36T_SHOTS")
+    shots = os.environ.get("ALAV_SHOTS")
     shot = os.path.join(GAME_DIR, ".shot")
     frame, spent, most_draws, colors, times = 0, 0.0, 0, 0, []
     last = report = time.perf_counter()
@@ -589,7 +635,7 @@ def run(update, draw, title="R36T game"):
                     colors = max(colors, _screenshot(os.path.join(shots, "frame%05d.png" % frame)))
                 if frame >= CHECK:
                     break
-                if os.environ.get("R36T_PACE"):  # network checks need real time to pass
+                if os.environ.get("ALAV_PACE"):  # network checks need real time to pass
                     time.sleep(max(0, 1 / 60 - took))
             else:
                 if DEVICE and frame % 30 == 0 and os.path.exists(shot):  # developer mode asks for a picture
@@ -604,7 +650,7 @@ def run(update, draw, title="R36T game"):
                     times.clear()
     finally:
         if CHECK:
-            print("R36T_CHECK " + json.dumps({
+            print("ALAV_CHECK " + json.dumps({
                 # the median ignores one-off costs such as building a sound
                 "frames": frame, "avg_ms": round(sorted(times)[len(times) // 2] * 1000, 3) if times else 0,
                 "max_ms": round(max(times, default=0) * 1000, 3), "draws": most_draws, "colors": colors,

@@ -9,7 +9,7 @@ Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 
-import r36t as g
+import alav as g
 
 NAME = "netduel"          # must be the same on both sides, unique for your game
 COLORS = [g.BLUE, g.RED, g.GREEN, g.YELLOW]
@@ -72,7 +72,7 @@ def simulate(dt):
 def update(dt):
     global players, bullets, my_id, frame
     if state == "menu":
-        if g.ROLE:                    # set by "python tool.py run/check --net": skip the menu
+        if g.ROLE:                    # set by the ALAV Store lobby and by tool.py --net: skip the menu
             begin(g.ROLE)
         elif g.pressed("A"):
             begin("host")

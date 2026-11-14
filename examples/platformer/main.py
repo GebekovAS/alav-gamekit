@@ -5,7 +5,7 @@ Pattern to copy: the level is text (LEVEL), one character = one 32 px tile.
 
 Rules and the whole API: AGENTS.md in the repository root.
 """
-import r36t as g
+import alav as g
 
 T = 32          # tile size in pixels
 TOP = 24        # the level is drawn below the HUD line

@@ -1,6 +1,6 @@
 ---
 name: check-game
-description: Test an R36T game automatically and fix what fails. Use after every change to a game and before saying it works.
+description: Test an ALAV Store game (handheld console game) automatically and fix what fails. Use after every change to a game and before saying it works.
 ---
 
 1. Run `python tool.py check <slug>` (network games: add `--net`).

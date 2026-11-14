@@ -1,6 +1,6 @@
 ---
 name: new-game
-description: Create a new R36T game from an idea. Use when the user asks to make, build or start a game for the R36T console.
+description: Create a new ALAV Store game (handheld console game) from an idea. Use when the user asks to make, build or start a game for a handheld console.
 ---
 
 1. Read `AGENTS.md` in the repository root (rules and the whole API). Do not skip this.
