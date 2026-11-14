@@ -24,7 +24,7 @@ frame = 0
 
 def begin(role):
     global net, state
-    net = g.host(NAME) if role == "host" else g.join(NAME)
+    net = g.host(NAME, max_players=len(COLORS)) if role == "host" else g.join(NAME)  # one colour per player
     state = "play"
 
 

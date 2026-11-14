@@ -417,17 +417,20 @@ def quit():
 # ---------------------------------------------------------------- network
 
 NET_PORT = 36036
+_hosting = None  # the Net made by host(): run() answers the store lobby for it every frame
 _SLUG = "abcdefghijklmnopqrstuvwxyz0123456789"  # a store slug is [a-z0-9][a-z0-9_-]{0,39}
 
 
-def _lobby_reply(slug, title, players):
+def _lobby_reply(slug, title, players, max_players=None):
     """Answer to the store lobby probe b"ALAV?*": at most 250 bytes, or None when the folder is not a store slug."""
     if not (0 < len(slug) <= 40 and slug[0] in _SLUG and all(ch in _SLUG + "_-" for ch in slug)):
         return None
     title = title[:40]
     while True:
-        data = b"ALAV!*" + json.dumps({"slug": slug, "name": title, "players": players},
-                                      ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace")
+        info = {"slug": slug, "name": title, "players": players}
+        if max_players:
+            info["max"] = max_players
+        data = b"ALAV!*" + json.dumps(info, ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace")
         if len(data) <= 250:
             return data
         title = title[:-1]
@@ -436,10 +439,13 @@ def _lobby_reply(slug, title, players):
 class Net:
     """LAN link between consoles. Make one with host() or join(); see AGENTS.md "Network games"."""
 
-    def __init__(self, name, is_host, ip=None):
+    def __init__(self, name, is_host, ip=None, max_players=None):
+        global _hosting
         if not name or name.startswith("*"):  # b"ALAV?*" is the store lobby probe
             raise ValueError("network game name must not be empty or start with '*'")
-        self.name, self.is_host, self.ip = name.encode(), is_host, ip
+        if max_players is not None and not (type(max_players) is int and 2 <= max_players <= 99):
+            raise ValueError("max_players must be a whole number from 2 to 99, or None for no limit")
+        self.name, self.is_host, self.ip, self.max = name.encode(), is_host, ip, max_players
         self.peers = {}  # id -> [socket, unparsed bytes]; a client sees the host as id 0
         self._next_id, self._retry = 1, 0.0
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -456,6 +462,7 @@ class Net:
                     self.title = str(json.load(f)["title"])
             except (OSError, ValueError, KeyError, TypeError):
                 pass
+            _hosting = self
 
     @property
     def connected(self):
@@ -475,13 +482,17 @@ class Net:
     def _find(self):
         if self.is_host:
             while self._readable(self.srv):
-                self._add(self.srv.accept()[0], self._next_id)
+                sock = self.srv.accept()[0]
+                if self.max and len(self.peers) >= self.max - 1:  # the match is full
+                    sock.close()
+                    continue
+                self._add(sock, self._next_id)
                 self._next_id += 1
             while self._readable(self.udp):
                 try:  # datagrams come from anyone on the network: a bad one must not stop the game
                     data, addr = self.udp.recvfrom(256)
                     if data == b"ALAV?*":  # the store lobby asks who is hosting
-                        reply = _lobby_reply(self.slug, self.title, len(self.peers) + 1)
+                        reply = _lobby_reply(self.slug, self.title, len(self.peers) + 1, self.max)
                         if reply:
                             self.udp.sendto(reply, addr)
                     elif data == b"ALAV?" + self.name:
@@ -549,9 +560,12 @@ class Net:
                     self.peers.pop(pid, None)
 
 
-def host(name):
-    """Start a network game others can join. name: any short id of your game, the same on both sides."""
-    return Net(name, True)
+def host(name, max_players=None):
+    """Start a network game others can join. name: any short id of your game, the same on both sides.
+
+    max_players (you included): the store lobby shows the match as full and nobody above it gets in.
+    """
+    return Net(name, True, max_players=max_players)
 
 
 def join(name, ip=None):
@@ -615,6 +629,8 @@ def run(update, draw, title="ALAV game"):
                 if C.c_uint32.from_buffer(event).value == 0x100:  # window closed
                     _running = False
             _read_input(frame)
+            if _hosting:  # the store lobby must see a host whose game is paused and not calling recv()
+                _hosting._find()
             if not CHECK and ((_now["SELECT"] and _now["START"]) or _KeyState(None)[41]):  # 41 = Esc
                 break
             start = time.perf_counter()

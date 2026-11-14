@@ -1,6 +1,7 @@
 """Test of `tool.py publish` against a local fake of the ALAV Store catalog. Run: python test_publish.py
 
-The fake follows Docs/DEVELOPER_PUBLISHING.md of the server (sections 2-4). Nothing is sent to alav.online.
+The fake follows Docs/DEVELOPER_PUBLISHING.md of the server (sections 2-4 and the review of 3.7). Nothing is sent
+to alav.online. The administrator's decisions are made by approve() and reject() below.
 """
 import hashlib
 import http.server
@@ -22,6 +23,10 @@ KEY = "mk_1a2b3c4d_" + "k" * 43
 GENERIC = "При обработке запроса возникла непредвиденная ошибка"
 APPS, FILES, UPLOADS, LOG = {}, {}, {}, []   # LOG: (method, path, headers) of every request
 FAIL = {}                                    # "METHOD path-suffix" -> detail: answer 400 once
+PENDING = []                                 # non-empty: the key's developer account is not approved yet
+NO_PACKAGE = ("Для выпуска в ALAV Store версии нужен пакет для консоли: артефакт linux/arm64 (или any) в формате zip. "
+              "Добавьте его к черновику и повторите выпуск")
+FROZEN = "Версия на проверке: изменить её нельзя. Отзовите версию с проверки или удалите её"
 
 
 def error(detail, path):
@@ -93,6 +98,8 @@ def route(method, path, query, body, headers):
         FILES[file_id] = content
         return 200, {"id": file_id, "fileName": data["fileName"], "contentType": data["contentType"],
                      "size": len(content), "created": "2026-11-14T12:00:00Z", "uploadedBy": None, "isTemporary": False}
+    if PENDING:  # a developer who is not approved yet: every developer route answers 403 with an empty body
+        return 403, None
     found = re.fullmatch(r"/api/v2/applications/([^/]+)(?:/versions(?:/([^/]+)(?:/(artifacts|publish))?)?)?", path)
     app = APPS.get(found.group(1)) if found else None
     if not app:
@@ -110,11 +117,14 @@ def route(method, path, query, body, headers):
                          "errors": {"Version": ["The Version field is required."]}}
         if any(v["version"] == data["version"] for v in app["versions"]):
             return error(GENERIC, path)
+        if data.get("publishImmediately"):  # a new version has no console package yet
+            return error(NO_PACKAGE, path)
         ver = {"id": str(uuid.uuid4()), "applicationBaseId": app["id"], "version": data["version"],
                "description": data["description"], "longDescription": data.get("longDescription"), "iconFileId": None,
                "fileId": data["fileId"], "fileName": data["fileName"], "fileSize": data["fileSize"], "rating": 0,
-               "downloadsCount": 0, "status": 1 if data.get("publishImmediately") else 0, "publishedAt": None,
-               "deprecatedAt": None, "createdAt": "2026-11-14T12:05:00Z", "updatedAt": None, "releaseNotes": None,
+               "downloadsCount": 0, "status": 0, "publishedAt": None,
+               "deprecatedAt": None, "submittedAt": None, "rejectionReason": None,
+               "createdAt": "2026-11-14T12:05:00Z", "updatedAt": None, "releaseNotes": None,
                "minimumOsVersion": None, "tags": data.get("tags", []), "channel": data.get("channel", "stable"),
                "isMandatory": False, "rolloutPercent": 100, "_artifacts": []}
         app["versions"].append(ver)
@@ -122,6 +132,8 @@ def route(method, path, query, body, headers):
     if not ver:
         return error(GENERIC, path)
     if (method, found.group(3)) == ("POST", "artifacts"):
+        if ver["status"] == 4:
+            return error(FROZEN, path)
         content = FILES[data["fileId"]]
         artifact = {"id": str(uuid.uuid4()), "platform": data["platform"], "arch": data.get("arch", "any"),
                     "format": data.get("format", "zip"), "fileName": ver["fileName"], "fileSize": len(content),
@@ -130,10 +142,15 @@ def route(method, path, query, body, headers):
         ver["_artifacts"].append(artifact)
         return 201, artifact
     if (method, found.group(3)) == ("PATCH", "publish"):
-        for other in app["versions"]:
-            if other["status"] == 1 and other["channel"] == ver["channel"]:
-                other["status"] = 2
-        ver.update(status=1, publishedAt="2026-11-14T12:10:00Z")
+        if ver["status"] == 4:
+            return 200, ver  # already in review: a no-op with the same answer
+        if ver["status"] != 0:
+            return error(GENERIC, path)
+        if not any((a["platform"], a["format"]) == ("linux", "zip") and a["arch"] in ("arm64", "any")
+                   for a in ver["_artifacts"]):
+            return error(NO_PACKAGE, path)
+        # A developer's release is held: nothing is deprecated or made public until the administrator approves.
+        ver.update(status=4, submittedAt="2026-11-14T12:10:00Z", rejectionReason=None)
         return 200, ver
     if (method, found.group(3)) == ("DELETE", None):
         if ver["status"] == 1:
@@ -141,6 +158,22 @@ def route(method, path, query, body, headers):
         app["versions"].remove(ver)
         return 204, None
     return 401, None
+
+
+def approve(ver):
+    """The administrator approves a version in review: it is published, the previous one is deprecated."""
+    app = APPS[ver["applicationBaseId"]]
+    assert ver["status"] == 4
+    for other in app["versions"]:
+        if other["status"] == 1 and other["channel"] == ver["channel"]:
+            other["status"] = 2
+    ver.update(status=1, publishedAt="2026-11-14T13:00:00Z", submittedAt=None)
+
+
+def reject(ver, reason):
+    """The administrator rejects a version in review: a draft again, with the reason for its author."""
+    assert ver["status"] == 4
+    ver.update(status=0, submittedAt=None, rejectionReason=reason)
 
 
 class Fake(http.server.BaseHTTPRequestHandler):
@@ -240,21 +273,51 @@ def main():
         assert (artifact["platform"], artifact["arch"], artifact["format"]) == ("linux", "arm64", "zip")
         assert ver["fileSize"] == len(local) and ver["fileName"] == os.path.basename(zip_path)
 
-        code, out, sent = publish(game, "--release")                           # the draft is published, no upload
-        assert code == 0 and "published" in out, out
-        assert sent == ["GET /api/v2/applications/mine", "PATCH " + VERSIONS + "/{id}/publish"], sent
-        assert ver["status"] == 1
+        PENDING.append(True)                                                   # the account lost its approval
+        code, out, sent = publish(game, "--release")
+        assert code != 0 and "403" in out and "approved" in out and ver["status"] == 0, out
+        del PENDING[:]
 
+        code, out, sent = publish(game, "--release")                           # the draft goes to review, no upload
+        assert code == 0 and "sent for review" in out and "after the administrator approves" in out, out
+        assert "published:" not in out, out
+        assert sent == ["GET /api/v2/applications/mine", "PATCH " + VERSIONS + "/{id}/publish"], sent
+        assert ver["status"] == 4 and app_json(app)["latestVersion"] is None    # nothing is public yet
+
+        for flags in ((), ("--release",)):                                     # a rerun while in review: just waits
+            code, out, sent = publish(game, *flags)
+            assert code == 0 and "still waiting" in out and sent == ["GET /api/v2/applications/mine"], out
+        assert ver["status"] == 4 and len(app["versions"]) == 1
+
+        reject(ver, "Нет описания управления")                                 # rejected: the reason is shown,
+        code, out, sent = publish(game)                                        # a plain publish replaces the draft
+        assert code == 0 and "rejected" in out and "Нет описания управления" in out and "draft" in out, out
+        assert "DELETE " + VERSIONS + "/{id}" in sent and "PATCH " + VERSIONS + "/{id}/publish" not in sent, sent
+        ver, = app["versions"]
+        assert ver["status"] == 0 and ver["rejectionReason"] is None           # a new draft of the current build
+        reject_again = publish(game, "--release")
+        assert reject_again[0] == 0 and ver["status"] == 4, reject_again[1]
+        reject(ver, "Ещё раз")                                                 # --release after a rejection uploads
+        code, out, sent = publish(game, "--release")                           # the current build, then submits it
+        assert code == 0 and "Ещё раз" in out and "sent for review" in out and "POST " + VERSIONS in sent, out
+        ver, = app["versions"]
+        assert ver["status"] == 4 and ver["rejectionReason"] is None
+
+        approve(ver)                                                           # the administrator approves
         code, out, sent = publish(game)                                        # the same version again
         assert code != 0 and "already published" in out and sent == ["GET /api/v2/applications/mine"], out
 
         with open(os.path.join(game, "big.bin"), "wb") as f:                   # makes the zip span two chunks
             f.write(os.urandom(6 * 1024 * 1024))
         set_version(game, "1.0.1")
-        code, out, sent = publish(game, "--release")                           # a new version of the same app
-        assert code == 0 and "published" in out, out
+        code, out, sent = publish(game, "--release")                           # an update of an approved app
+        assert code == 0 and "sent for review" in out, out                     # is reviewed as well
         assert "POST /api/v2/applications" not in sent and sent.count("POST /api/v1/Files/upload/chunk") == 3, sent
-        assert len(APPS) == 1 and [(v["version"], v["status"]) for v in app["versions"]] == [("1.0.0", 2), ("1.0.1", 1)]
+        # Until the approval the published version stays the one in the store.
+        assert len(APPS) == 1 and [(v["version"], v["status"]) for v in app["versions"]] == [("1.0.0", 1), ("1.0.1", 4)]
+        assert app_json(app)["latestVersion"]["version"] == "1.0.0"
+        approve(app["versions"][1])
+        assert [(v["version"], v["status"]) for v in app["versions"]] == [("1.0.0", 2), ("1.0.1", 1)]
         with open(os.path.join(dist, "ALAV-pubtest-1.0.1-linux-arm64.zip"), "rb") as f:
             assert FILES[app["versions"][1]["_artifacts"][0]["_fileId"]] == f.read()
         os.remove(os.path.join(game, "big.bin"))

@@ -12,6 +12,8 @@ description: Make or fix an ALAV Store multiplayer game played over Wi-Fi betwee
    - player ids are strings; `if g.ROLE: begin(g.ROLE)` stays in the menu code: it is how the
      ALAV Store lobby ("playing nearby") and the check start the game straight as host or join.
      A hosting game appears in that lobby by itself; `g.join(NAME)` goes to the picked match.
+   - a game for a fixed number of players hosts with `g.host(NAME, max_players=N)`: the lobby shows
+     "full" and the kit refuses extra players.
 4. Put everything a client must draw into the state message (positions, scores, whose turn).
    Keep it small: numbers and short lists, not long texts.
 5. Test: `python tool.py check <slug> --net` (starts a host, a join copy and a copy joined the way

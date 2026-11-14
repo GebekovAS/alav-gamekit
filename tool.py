@@ -272,7 +272,8 @@ def lobby_problems(slug):
     try:
         info = json.loads(data[6:].decode("utf-8"))
         ok = (data[:6] == b"ALAV!*" and len(data) <= 250 and info["slug"] == slug and isinstance(info["name"], str)
-              and 0 < len(info["name"]) <= 40 and type(info["players"]) is int and info["players"] >= 1)
+              and 0 < len(info["name"]) <= 40 and type(info["players"]) is int and info["players"] >= 1
+              and ("max" not in info or type(info["max"]) is int and info["players"] <= info["max"] <= 99))
     except (ValueError, KeyError, TypeError):
         ok = False
     if ok:
@@ -470,7 +471,9 @@ def store(method, path, body=None, content_type="application/json"):
         except (ValueError, AttributeError, TypeError):
             pass
         hint = {401: " (is ALAV_KEY right and not revoked? keys: %s)" % DEVELOPERS,
-                403: " (the key needs the apps:publish scope and an active developer account)"}.get(e.code, "")
+                # the store answers 403 without a reason, so every cause is listed
+                403: " (the key needs the apps:publish scope, and its developer account must be approved by the "
+                     "store administrator and not blocked; the account state is shown on %s)" % DEVELOPERS}.get(e.code, "")
         sys.exit("the store refused: %s %s -> %d %s%s" % (method, path.split("?")[0], e.code, text[:500], hint))
     except (OSError, ValueError) as e:
         sys.exit("cannot reach the store at %s: %s" % (url.split("/api/")[0], e))
@@ -530,10 +533,17 @@ def cmd_publish(args):
             break
         page += 1
     old = next((v for v in app["versions"] if v["version"] == version), None) if app else None
+    if old and old["status"] == 4:  # in review: its files are frozen until the administrator decides
+        print("waiting for review: %s %s was already sent and is still waiting for approval; nothing is uploaded. "
+              "It will appear in the ALAV Store after approval" % (info["title"], version))
+        return 0
     if old and old["status"] != 0:
         sys.exit('version %s of %s is already published in the store: raise "version" in %s'
                  % (version, package_id, relpath(os.path.join(path, "game.json"))))
-    if old and release:
+    rejected = (old or {}).get("rejectionReason")
+    if rejected:
+        print("the review rejected the earlier upload of %s: %s" % (version, rejected))
+    if old and release and not rejected:
         print("draft %s is already uploaded: publishing it, nothing is uploaded again" % version)
         versions, ver = "/api/v2/applications/%s/versions" % app["id"], old
     else:
@@ -571,9 +581,14 @@ def cmd_publish(args):
             sys.exit("%s\nnothing was published; run the command again" % e)
         print("uploaded %s %s" % (info["title"], version))
     if release:
-        if store("PATCH", "%s/%s/publish" % (versions, ver["id"]))["status"] != 1:
+        status = store("PATCH", "%s/%s/publish" % (versions, ver["id"]))["status"]
+        if status == 4:  # every release of a developer is reviewed before it becomes public
+            print("sent for review: %s %s will appear in the ALAV Store after the administrator approves it"
+                  % (info["title"], version))
+        elif status == 1:
+            print("published: %s %s is in the ALAV Store, visible to everyone" % (info["title"], version))
+        else:
             sys.exit("the store did not publish the version; look at it on " + DEVELOPERS)
-        print("published: %s %s is in the ALAV Store, visible to everyone" % (info["title"], version))
     else:
         print("draft: %s %s is visible only to you. To publish it for everyone: python tool.py publish %s --release"
               % (info["title"], version, slug))

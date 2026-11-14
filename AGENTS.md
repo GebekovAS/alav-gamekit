@@ -173,7 +173,9 @@ net.peers                           # a dict keyed by player id: use `for pid in
   then connects to that match by itself. Without this line the lobby cannot bring a player in and
   `python tool.py check my-game --net` fails.
 - A hosting game is listed in the ALAV Store lobby automatically (folder name, title from
-  `game.json`, number of players). The name must not start with `*`.
+  `game.json`, number of players), also while it is paused. The name must not start with `*`.
+  If the game has a player limit, say so: `g.host("my-game", max_players=2)` (you included). The
+  lobby then shows the match as full and the kit lets nobody above the limit in.
 - A player can leave at any moment: use `.get()` for ids, never assume a player exists.
 - Try it on one PC: `python tool.py run my-game --net` opens two windows (click one to control it).
 
@@ -224,13 +226,20 @@ If deploy says it cannot reach the console, ask the user to wake it; do not retr
 ## Publishing in the ALAV Store
 
 Only when the user asks to put the game in the store. The user registers as a developer at
-https://alav.online/developers, creates a key there and sets it on the PC as the environment
-variable `ALAV_KEY`. Never ask the user to paste the key into the chat and never write it to a file.
+https://alav.online/developers, waits until the store administrator approves the account (before
+that no key can be created and the store answers 403), creates a key there and sets it on the PC as
+the environment variable `ALAV_KEY`. Never ask the user to paste the key into the chat and never write it to a file.
 
 | Command | What it does |
 | --- | --- |
 | `python tool.py publish my-game` | upload the game as a **draft**: only the developer sees it |
-| `python tool.py publish my-game --release` | upload and publish for everyone; if this version is already a draft, publish that draft |
+| `python tool.py publish my-game --release` | upload and send for release; if this version is already a draft, send that draft |
+
+- **Every release is reviewed by the store administrator**, the first one and every update. `--release`
+  ends with `sent for review`: tell the user the game will appear in the store after approval, not that
+  it is published. Until then the previous version stays in the store. Running the command again prints
+  `waiting for review` and uploads nothing. If the review rejected the version, the command prints the
+  reason: show it to the user, fix the game, run `publish` again (it uploads the new build).
 
 - **Never use `--release` unless the user asked to publish the game for everyone.** "Upload",
   "send to the store", "try it in the store" mean a draft: run the command without `--release`.
