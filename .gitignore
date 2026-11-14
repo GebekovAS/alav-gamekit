@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+dist/
+out/
+save.json
+save.json.tmp
