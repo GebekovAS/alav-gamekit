@@ -3,6 +3,17 @@
 You make games for the **R36T handheld console**. Follow this file exactly. It is complete:
 you do not need to search the web or read the kit's source.
 
+## If you were asked to download, install or prepare this kit
+
+This kit usually sits inside a user's project folder (for example `my-project/r36t-gamekit/`).
+Agent sessions start in the project folder, where these instructions would not be seen. So finish
+the preparation with one command, run inside the kit folder:
+
+`python tool.py setup`
+
+It writes the agent instructions into the project folder and creates `games/` there for the user's
+games. Then tell the user: start a new session in the project folder and ask for a game.
+
 ## The 5 steps (always in this order)
 
 1. **Create** the game from the closest example (see the table below):
@@ -11,14 +22,20 @@ you do not need to search the web or read the kit's source.
 3. **Check**: `python tool.py check my-game`
    - `FAIL` -> read the reasons, fix, run the check again. Repeat until `PASS`.
    - Network game: `python tool.py check my-game --net`
-4. **Look** at the screenshots the check saved in `out/check/my-game/` (open the PNG files).
-   If something looks wrong (nothing visible, text off screen), fix it and go to step 3.
+4. **Look** at the screenshots the check saved in `out/check/my-game/`. Open the PNG files; if you
+   cannot view images, read the `.txt` file next to each PNG: it is the same screen drawn with
+   characters, plus every text on it with its position. If something looks wrong (nothing
+   visible, text off screen), fix it and go to step 3.
+   The check presses random buttons, so it rarely gets past the first minute of the game. To see a
+   later screen (level 2, game over), temporarily start the game in that state, run the check,
+   read the screenshot, then **put the normal start back**.
 5. **Pack**: `python tool.py pack my-game` -> files in `dist/`. Tell the user: copy
    `dist/<Title>.sh` to the `ports_scripts` folder of the SD card and start it from **Ports**.
 
 Never say the game is done before step 3 prints `PASS` and you have looked at the screenshots.
 
-One-time PC setup (only if `check` says SDL2 is missing): `python -m pip install pysdl2-dll`
+No setup is needed: `tool.py` downloads SDL2 by itself the first time. Do not install anything
+and do not add `sys.path` tricks to the game.
 
 | Example (`--from`) | Use it for |
 | --- | --- |
@@ -143,7 +160,8 @@ for player_id, msg in net.recv():   # messages that arrived; ALWAYS call recv() 
 net.send({"x": 10})                 # to everyone; net.send(msg, to=player_id) to one player
 net.connected                       # True when somebody is linked
 net.is_host                         # True on the host
-net.peers                           # ids of linked players (the host is id 0 for a client)
+net.peers                           # a dict keyed by player id: use `for pid in net.peers`, never net.peers[0]
+                                    # on the host the joined players have ids 1, 2, 3...; a client sees only the host, id 0
 ```
 
 - Messages are dicts/lists/numbers/strings. Dict keys become **strings** on the other side:

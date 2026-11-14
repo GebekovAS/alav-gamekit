@@ -4,6 +4,8 @@ Menu: A - host a game, B - join. D-pad - move, A - fire.
 Pattern to copy (works for any network game):
   * the HOST runs the whole game and sends the full state to everyone;
   * every other player only sends its buttons and draws the state it receives.
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 

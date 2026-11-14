@@ -7,7 +7,8 @@ description: Test an R36T game automatically and fix what fails. Use after every
    It plays the game for 30 seconds with random buttons, without a window.
 2. If it prints `FAIL`: every line under it is one problem with the fix. Fix `games/<slug>/main.py`
    and run the check again. A Python traceback names the file and line to fix.
-3. If it prints `PASS`: open the PNG screenshots in `out/check/<slug>/` and look at them.
+3. If it prints `PASS`: open the PNG screenshots in `out/check/<slug>/` and look at them. If you cannot
+   view images, read the `.txt` file next to each PNG (the same screen as text).
    Check: the title screen says which button starts the game; nothing is cut off at the
    edges (screen is 600 x 440); the player and enemies are visible.
 4. Common fixes are in the "Common mistakes" table of `AGENTS.md`.

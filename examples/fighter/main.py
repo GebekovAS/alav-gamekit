@@ -3,6 +3,8 @@
 LEFT/RIGHT - walk, UP - jump, A - punch, B - kick, X (hold) - block.
 Pattern to copy: both fighters are driven by the same step() with a "controls" dict,
 so the opponent can be a CPU (here), a second pad, or a network player.
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 

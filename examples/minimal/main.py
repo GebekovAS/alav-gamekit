@@ -1,6 +1,8 @@
 """Minimal - the starting point for a new game: title, play, game over, score, sound, save.
 
 Catch the stars, avoid the red blocks. D-pad moves, A starts.
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 

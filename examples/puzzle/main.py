@@ -2,6 +2,8 @@
 
 D-pad - step, B - undo, X - restart the level.
 Pattern to copy: nothing moves by itself, so update() only reacts to g.pressed().
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import r36t as g
 

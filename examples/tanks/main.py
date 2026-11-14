@@ -2,6 +2,8 @@
 
 D-pad - drive, A - fire. Destroy all 12 drones; do not let them shoot the core.
 Pattern to copy: the map is text (MAP) turned into a list of lists, so tiles can be destroyed.
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import random
 

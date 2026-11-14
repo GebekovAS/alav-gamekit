@@ -2,6 +2,8 @@
 
 D-pad - run, A - jump (hold for a higher jump), B - run faster.
 Pattern to copy: the level is text (LEVEL), one character = one 32 px tile.
+
+Rules and the whole API: AGENTS.md in the repository root.
 """
 import r36t as g
 

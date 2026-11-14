@@ -1,6 +1,7 @@
 """r36t - tiny game library for the R36T handheld. The same game runs in a PC window.
 
-Python 3.11 standard library + SDL2 through ctypes. Full API with examples: AGENTS.md.
+Python 3.11 standard library + SDL2 through ctypes.
+Writing a game? Do not read this file: AGENTS.md has the rules and the whole API on one page.
 
     import r36t as g
 
@@ -46,11 +47,14 @@ def _lib(name):
         return C.CDLL("lib%s-2.0.so.0" % name)  # the console
     except OSError:
         pass
-    try:
-        import sdl2dll
-    except ImportError:
-        sys.exit("SDL2 not found. On a PC run:  python -m pip install pysdl2-dll")
-    folder = sdl2dll.get_dllpath()
+    folder = os.environ.get("R36T_SDL_DIR")  # set by tool.py, which downloads SDL2 when it is missing
+    if not (folder and os.path.isdir(folder)):
+        try:
+            import sdl2dll
+        except ImportError:
+            sys.exit("SDL2 not found. Start the game through the tool, it downloads SDL2 itself:  "
+                     "python tool.py run <slug>")
+        folder = sdl2dll.get_dllpath()
     if hasattr(os, "add_dll_directory"):
         os.add_dll_directory(folder)
     for f in os.listdir(folder):
@@ -126,6 +130,7 @@ _fonts, _texts, _images, _sounds = {}, {}, {}, {}
 _now = dict.fromkeys(BUTTONS, False)
 _before = dict(_now)
 _draws = 0
+_said = []  # check mode: the text drawn in the current frame, for the text view of screenshots
 _net_peak = 0
 _bot = random.Random(int(os.environ.get("R36T_SEED", "1")))  # check-mode button masher
 
@@ -227,6 +232,8 @@ def text(s, x, y, color=WHITE, size=20, align="left"):
     elif align == "right":
         x -= tw
     _draws += 1
+    if CHECK:
+        _said.append((s, int(x), int(y), tw, th))
     _CopyEx(_ren, tex, None, C.byref(_Rect(int(x), int(y), tw, th)), 0, None, 0)
     return tw
 
@@ -521,7 +528,25 @@ def _screenshot(path):
     surf = _SurfFrom(buf, W, H, 32, W * 4, _RGBA32)
     _IMG_SavePNG(surf, path.encode())
     _FreeSurface(surf)
-    return len(set(buf.raw[i:i + 3] for i in range(0, W * H * 4, 4 * 37)))
+    raw = buf.raw
+    if CHECK:  # the same picture as text, for models that cannot look at images
+        cells = [[raw[((r * 20 + 10) * W + c * 10 + 5) * 4:][:3] for c in range(W // 10)] for r in range(H // 20)]
+        count = {}
+        for row in cells:
+            for px in row:
+                count[px] = count.get(px, 0) + 1
+        order = sorted(count, key=count.get, reverse=True)
+        name = {px: ("." + "abcdefghijklmnopqrstuvwxyz")[i] if i < 27 else "#" for i, px in enumerate(order)}
+        lines = ["The screen (%dx%d) as text: one character is 10x20 pixels, '.' is the background." % (W, H)]
+        lines += ["".join(name[px] for px in row) for row in cells]
+        lines.append("Colours: " + ", ".join("%s=(%d,%d,%d)" % ((name[px],) + tuple(px)) for px in order[:27]))
+        lines.append("Text drawn in this frame (x, y = its top-left corner):")
+        for s, x, y, tw, th in _said:
+            inside = x >= 0 and y >= 0 and x + tw <= W and y + th <= H
+            lines.append("  %r at x=%d y=%d, size %dx%d%s" % (s, x, y, tw, th, "" if inside else "   <-- PARTLY OFF SCREEN"))
+        with open(path[:-4] + ".txt", "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    return len(set(raw[i:i + 3] for i in range(0, W * H * 4, 4 * 37)))
 
 
 def run(update, draw, title="R36T game"):
@@ -550,6 +575,7 @@ def run(update, draw, title="R36T game"):
             dt = 1 / 60 if CHECK else min(start - last, 0.05)  # a long hitch never teleports things
             last = start
             _draws = 0
+            _said.clear()
             update(dt)
             draw()
             took = time.perf_counter() - start
