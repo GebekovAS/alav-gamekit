@@ -1,0 +1,2 @@
+kit/font.ttf is Liberation Sans Bold, (c) Red Hat, Inc. and contributors,
+licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).

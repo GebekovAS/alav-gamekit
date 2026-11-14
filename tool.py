@@ -210,7 +210,7 @@ def stage(slug):
     out = os.path.join(DIST, os.path.basename(path))
     shutil.rmtree(out, ignore_errors=True)
     shutil.copytree(path, out, ignore=shutil.ignore_patterns(*SKIP, ".*", "*.pyc", "test_*"))
-    for name in ("r36t.py", "font.ttf"):
+    for name in ("r36t.py", "font.ttf", "font-license.txt"):
         shutil.copy(os.path.join(KIT, name), out)
     with open(os.path.join(out, "version.txt"), "w", newline="\n") as f:
         f.write(info["version"] + "\n")

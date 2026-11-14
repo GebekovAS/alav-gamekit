@@ -71,4 +71,4 @@ python tool.py deploy my-game --logs    # вывод игры: ошибки и f
 R36T: EmuELEC, RK3326, экран 600×440, Python 3.11, SDL2. Игры — чистый Python без
 зависимостей; на консоль ничего ставить не нужно.
 
-Лицензия: MIT. Шрифт `kit/font.ttf` — Liberation Sans Bold (SIL OFL 1.1).
+Лицензия: MIT. Шрифт `kit/font.ttf` — Liberation Sans Bold (SIL OFL 1.1), см. `kit/font-license.txt`.
