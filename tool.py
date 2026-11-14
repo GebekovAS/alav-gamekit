@@ -179,7 +179,7 @@ def cmd_run(args):
 def static_problems(path):
     """Things that work on the PC but break on the console (Python 3.11, no pip packages)."""
     problems = []
-    local = {os.path.splitext(f)[0] for f in os.listdir(path)} | {"alav"}
+    local = {os.path.splitext(f)[0] for f in os.listdir(path)} | {"alav", "r36t"}
     for name in sorted(os.listdir(path)):
         if not name.endswith(".py"):
             continue
@@ -320,7 +320,7 @@ def stage(slug):
     out = os.path.join(DIST, os.path.basename(path))
     shutil.rmtree(out, ignore_errors=True)
     shutil.copytree(path, out, ignore=shutil.ignore_patterns(*SKIP, ".*", "*.pyc", "test_*"))
-    for name in ("alav.py", "font.ttf", "font-license.txt"):
+    for name in ("alav.py", "r36t.py", "font.ttf", "font-license.txt"):  # r36t.py: old import name
         shutil.copy(os.path.join(KIT, name), out)
     with open(os.path.join(out, "version.txt"), "w", newline="\n") as f:
         f.write(info["version"] + "\n")
