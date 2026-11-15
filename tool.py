@@ -24,7 +24,7 @@ deploy needs developer mode: ALAV Store -> Settings on the console, then on the 
 ALAV_HOST to the address shown there. The first time the console asks to trust this PC.
 publish needs a developer key: register at https://alav.online/developers, create a key there and
 set ALAV_KEY to it. The game needs icon.png (PNG, at most 128x128 px and 64 KiB). Optional fields in
-game.json: "description", "genre", "kind" ("game" or "app").
+game.json: "description", "genre", "kind" ("game" or "app"), "net" (true for network games).
 <slug> is a folder name in games/ or examples/. After `setup`, games/, out/ and dist/ live in the
 workspace folder, not inside the kit. Keys on a PC: arrows, X=A, Z=B, S=X, A=Y,
 Q/W=L1/R1, Enter=START, Backspace=SELECT, Esc=quit.
@@ -156,10 +156,13 @@ def cmd_new(args):
         sys.exit(dst + " already exists")
     shutil.copytree(src, dst, ignore=shutil.ignore_patterns(*SKIP, ".*"))
     title = args[args.index("--title") + 1] if "--title" in args else slug.replace("-", " ").title()
+    info = {"title": title, "version": "1.0.0"}
+    if meta(src).get("net") is True:
+        info["net"] = True
     with open(os.path.join(dst, "game.json"), "w", encoding="utf-8") as f:
-        json.dump({"title": title, "version": "1.0.0"}, f, ensure_ascii=False, indent=2)
+        json.dump(info, f, ensure_ascii=False, indent=2)
     print("created %s\n"
-          "  1. edit its main.py (and nothing else); rules and the whole API: AGENTS.md\n"
+          "  1. edit its main.py and game.json; rules and the whole API: AGENTS.md\n"
           "  2. check %s   -> repeat until PASS, then read the screenshots (.png or .txt)" % (relpath(dst), slug))
 
 
@@ -179,6 +182,7 @@ def cmd_run(args):
 def static_problems(path):
     """Things that work on the PC but break on the console (Python 3.11, no pip packages)."""
     problems = []
+    network = meta(path).get("net") is True
     local = {os.path.splitext(f)[0] for f in os.listdir(path)} | {"alav", "r36t"}
     for name in sorted(os.listdir(path)):
         if not name.endswith(".py"):
@@ -193,6 +197,11 @@ def static_problems(path):
             problems.append("%s: syntax error (the console has Python 3.11): %s" % (name, e))
             continue
         for node in ast.walk(tree):
+            if (not network and isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name) and node.func.value.id in ("g", "alav", "r36t")
+                    and node.func.attr in ("host", "join")):
+                problems.append('%s:%d: network game: add "net": true to game.json so the store can host it'
+                                % (name, node.lineno))
             mods = [a.name for a in node.names] if isinstance(node, ast.Import) else \
                 [node.module or ""] if isinstance(node, ast.ImportFrom) and not node.level else []
             for mod in mods:
@@ -285,10 +294,10 @@ def lobby_problems(slug):
 
 def cmd_check(args):
     path = game_dir(args[0])
-    meta(path)
+    network = meta(path).get("net") is True or "--net" in args
     problems = static_problems(path)
     if not problems:
-        if "--net" in args:
+        if network:
             runs = [("host", *headless(path, 480, "-host", ALAV_ROLE="host", ALAV_PACE="1", ALAV_JOIN=""))]
             time.sleep(1)
             runs.append(("join", *headless(path, 420, "-join", ALAV_ROLE="join", ALAV_PACE="1", ALAV_JOIN="")))
@@ -298,7 +307,7 @@ def cmd_check(args):
         else:
             runs = [("game", *headless(path, CHECK_FRAMES))]
         for name, shots, proc in runs:
-            problems += judge(name, proc, shots, "--net" in args)[0]
+            problems += judge(name, proc, shots, network)[0]
     if not os.path.isfile(os.path.join(path, "icon.png")):
         print("  note: no icon.png yet (needed only for publishing in the ALAV Store)")
     if problems:

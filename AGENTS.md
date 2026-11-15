@@ -18,10 +18,11 @@ games. Then tell the user: start a new session in the project folder and ask for
 
 1. **Create** the game from the closest example (see the table below):
    `python tool.py new my-game --from platformer --title "My Game"`
-2. **Edit** only `games/my-game/main.py` (and `games/my-game/assets/` if you add files).
+2. **Edit** `games/my-game/main.py`, `game.json` (metadata), and `assets/` if you add files.
 3. **Check**: `python tool.py check my-game`
    - `FAIL` -> read the reasons, fix, run the check again. Repeat until `PASS`.
-   - Network game: `python tool.py check my-game --net`
+   - Network game: declare `"net": true` in `game.json`; `check` runs the network test automatically.
+     `python tool.py check my-game --net` also explicitly selects that test.
 4. **Look** at the screenshots the check saved in `out/check/my-game/`. Open the PNG files; if you
    cannot view images, read the `.txt` file next to each PNG: it is the same screen drawn with
    characters, plus every text on it with its position. If something looks wrong (nothing
@@ -148,6 +149,10 @@ PIC = g.image("hero.png")   # or a PNG file from games/<slug>/assets/
 
 Copy the `netduel` example. The pattern, which works for any game:
 
+- Set `"net": true` in `game.json`. The ALAV Store lists installed network games under «Создать игру»
+  in its lobby; pressing A starts the game with `g.ROLE == "host"`. `check` requires this metadata
+  when the source calls `g.host()` or `g.join()`, and tests network games even without `--net`.
+
 - One console is the **host**: it runs all the game rules and sends the whole state to the others.
 - The others **join**: each sends only its buttons and draws the state it receives.
 
@@ -169,7 +174,8 @@ net.peers                           # a dict keyed by player id: use `for pid in
   use string ids (`"0"`, `"1"`) for players.
 - In the menu: `A - host`, `B - join`. Also start directly, without the menu, when the game was
   started for one role: `if g.ROLE: begin(g.ROLE)` (`g.ROLE` is `"host"`, `"join"` or `None`).
-  It is `"join"` when the player picked a running match in the ALAV Store lobby; `g.join(name)`
+  It is `"host"` when the player creates a game, or `"join"` when they pick a running match in the
+  ALAV Store lobby; `g.join(name)`
   then connects to that match by itself. Without this line the lobby cannot bring a player in and
   `python tool.py check my-game --net` fails.
 - A hosting game is listed in the ALAV Store lobby automatically (folder name, title from
@@ -246,7 +252,8 @@ the environment variable `ALAV_KEY`. Never ask the user to paste the key into th
 - Before it: `check` prints `PASS`, and `games/my-game/icon.png` exists - a real picture of the game,
   PNG, at most 128 x 128 pixels and 64 KiB (the command refuses a bigger one).
 - `game.json` fields the store uses: `"title"`, `"version"`, and optional `"description"` (one or two
-  sentences), `"genre"` and `"kind"` (`"game"`, the default, or `"app"`). Genres of a game: Шутеры,
+  sentences), `"genre"`, `"kind"` (`"game"`, the default, or `"app"`), and `"net"` (`true` for network
+  games, omitted for solo games). Genres of a game: Шутеры,
   Спорт, Гонки, Файтинги, Платформеры, Аркады, Головоломки, RPG, Стратегии; of an app: ИИ,
   Инструменты, Мультимедиа, Система. Without `"genre"` the store shows «Другое».
 - A published version cannot be replaced: raise `"version"` for the next one. A draft can: running
