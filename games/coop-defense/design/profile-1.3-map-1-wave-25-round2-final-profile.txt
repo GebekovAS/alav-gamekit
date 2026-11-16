@@ -1,0 +1,23 @@
+         371219 function calls (326542 primitive calls) in 0.142 seconds
+
+   Ordered by: cumulative time
+   List reduced from 59 to 15 due to restriction <15>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      640    0.013    0.000    0.142    0.000 main.py:238(update)
+      640    0.034    0.000    0.057    0.000 rules.py:440(tick)
+      237    0.000    0.000    0.055    0.000 probe_perf.py:40(send)
+ 37929/79    0.027    0.000    0.054    0.001 copy.py:128(deepcopy)
+   474/79    0.002    0.000    0.054    0.001 copy.py:227(_deepcopy_dict)
+ 7222/790    0.011    0.000    0.047    0.000 copy.py:201(_deepcopy_list)
+       79    0.005    0.000    0.009    0.000 rules.py:592(snapshot)
+     2560    0.006    0.000    0.008    0.000 rules.py:313(action)
+    99673    0.007    0.000    0.007    0.000 {method 'get' of 'dict' objects}
+      381    0.003    0.000    0.006    0.000 rules.py:64(enemies_in_range)
+      280    0.000    0.000    0.006    0.000 {built-in method builtins.next}
+      640    0.003    0.000    0.005    0.000 main.py:228(masks)
+     2069    0.004    0.000    0.004    0.000 {built-in method builtins.sorted}
+     7696    0.003    0.000    0.004    0.000 copy.py:243(_keep_alive)
+      781    0.000    0.000    0.004    0.000 rules.py:430(progress_order)
+
+

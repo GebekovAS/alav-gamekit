@@ -1,0 +1,9 @@
+Ночное депо 836.0
+MAXED 1p ACTIVE: defeat wave=33 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[30, 32, 31, 33]
+MAXED 1p PASSIVE: defeat wave=25 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[23, 25, 24, 23]
+MAXED 2p ACTIVE: defeat wave=33 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[32, 33, 32, 33]
+MAXED 2p PASSIVE: defeat wave=25 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[24, 24, 24, 25]
+MAXED 3p ACTIVE: defeat wave=32 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[30, 32, 32, 32]
+MAXED 3p PASSIVE: defeat wave=24 build=(2, 3, 7, 3, 7, 7, 10, 11) candidates=[24, 23, 24, 23]
+MAXED 4p ACTIVE: defeat wave=33 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[30, 33, 33, 33]
+MAXED 4p PASSIVE: defeat wave=25 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[24, 25, 23, 23]

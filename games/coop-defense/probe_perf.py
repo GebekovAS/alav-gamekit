@@ -4,13 +4,17 @@ Real update/draw/rules/SDL, deterministic in-memory network (no Wi-Fi/JSON cost)
 60 road enemies plus four jammers, four real overcharge holds, eight final towers
 with mastery. Runs 8 seconds at 80Hz, including snapshots. --late with wave 25
 also captures the late-game scene and real mastery menus, without editing main.py.
+--tag NAME preserves historical artifacts; --profile profiles only host update
+(its instrumented timings must not be compared with ordinary benchmark times).
 """
 import ast
 import copy
+import cProfile
 import hashlib
 import importlib.util
 import json
 import os
+import pstats
 from pathlib import Path
 import statistics
 import sys
@@ -51,6 +55,8 @@ if __name__=='__main__':
     map_id=int(sys.argv[2]) if len(sys.argv)>2 else None
     wave=int(sys.argv[3]) if len(sys.argv)>3 else 20
     suffix='1.3-map-%d-wave-%d'%(1 if map_id is None else map_id+1,wave)
+    if '--tag' in sys.argv:suffix+='-'+sys.argv[sys.argv.index('--tag')+1]
+    profile=cProfile.Profile() if '--profile' in sys.argv else None
     destination=GAME/'design'/('perf-%s.json'%suffix)
     if label=='before' and destination.exists():
         raise SystemExit('Baseline already captured before optimization; keep it. Use after for current code.')
@@ -83,8 +89,11 @@ if __name__=='__main__':
         g.pressed=lambda key:key=='A' and frame==0
         host['net'].inbox=[(pid,[frame,16,16 if frame==0 else 0]) for pid in (1,2,3)]
         for role,ns in [('host',host),('join',client)]:
+            if profile and role=='host':profile.enable()
             start=time.perf_counter_ns();ns['update'](.0125)
-            mid=time.perf_counter_ns();g._draws=0;g._said.clear();ns['draw']()
+            mid=time.perf_counter_ns()
+            if profile and role=='host':profile.disable()
+            g._draws=0;g._said.clear();ns['draw']()
             end=time.perf_counter_ns()
             times[role].append((end-start)/1e6);calls[role].append(g._draws)
             if role=='host':times['simulation'].append((mid-start)/1e6)
@@ -95,6 +104,11 @@ if __name__=='__main__':
         if frame>25:assert len(m.over)==4
     result={role:dict(stats(times[role]),max_draw_calls=max(calls[role]),mean_draw_calls=round(statistics.mean(calls[role]),1)) for role in calls}
     result['host_update']=stats(times['simulation'])
+    result['profiled']=profile is not None
+    if profile:
+        profile.dump_stats(str(GAME/'design'/('profile-%s.pstats'%suffix)))
+        with (GAME/'design'/('profile-%s.txt'%suffix)).open('w',encoding='utf-8') as output:
+            pstats.Stats(profile,stream=output).strip_dirs().sort_stats('cumulative').print_stats(15)
     result['map']=m.map_id
     result['asset_init_ms']={'host':round(host_load_ms,2),'join':round(client_load_ms,2)}
     result['map_texture_rgba_bytes']=4*600*408*4+480*82*4

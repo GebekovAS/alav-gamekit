@@ -227,9 +227,10 @@ def leave(message=''):
 
 def masks():
     held=pressed=0
+    down=g.down;edge=g.pressed
     for i,b in enumerate(BUTTONS):
-        if g.down(b):held|=1<<i
-        if g.pressed(b):pressed|=1<<i
+        if down(b):held|=1<<i
+        if edge(b):pressed|=1<<i
     if held&SELECT:pressed&=~START
     return held,pressed
 
@@ -256,18 +257,19 @@ def update(dt):
     send_clock+=dt;net_clock+=dt;snapshot_age+=dt
     if net.is_host:
         ids={'0'}|{str(pid) for pid in net.peers}
-        arriving={str(pid) for pid,msg in messages if isinstance(msg,list) and len(msg)==3 and all(type(v) is int for v in msg) and 0<=msg[1]<4096 and 0<=msg[2]<4096}
         for pid in list(match.players):
             if pid!='0' and (pid not in ids or clock-last_input.get(pid,clock)>5):
                 suspended.add(pid)
                 match.remove_player(pid);remote.pop(pid,None);seen.pop(pid,None);last_input.pop(pid,None)
+        # Reconnect validation is only needed for suspended seats, after expiry.
+        arriving={str(pid) for pid,msg in messages if isinstance(msg,list) and len(msg)==3 and all(type(v) is int for v in msg) and 0<=msg[1]<4096 and 0<=msg[2]<4096} if suspended else ()
         for pid in sorted(ids,key=int):
             if pid not in match.players and (pid not in suspended or pid in arriving) and (match.phase!='wave' or pid in known):
                 match.add_player(pid);known.add(pid);last_input[pid]=clock;seen.pop(pid,None);suspended.discard(pid)
         for pid,msg in messages:
             pid=str(pid)
             if pid not in match.players:continue
-            if not isinstance(msg,list) or len(msg)!=3 or not all(type(v) is int for v in msg):continue
+            if not isinstance(msg,list) or len(msg)!=3 or type(msg[0]) is not int or type(msg[1]) is not int or type(msg[2]) is not int:continue
             number,h,p=msg
             if number<=seen.get(pid,-1) or h<0 or p<0 or h>=4096 or p>=4096:continue
             seen[pid]=number;last_input[pid]=clock
@@ -281,7 +283,8 @@ def update(dt):
         match.tick(min(dt,.1),inputs)
         if match.map_id!=selected_map:
             selected_map=match.map_id;save_data['map']=selected_map;g.save(save_data)
-        for pid,value in list(remote.items()):remote[pid]=(value[0],0)
+        for pid,value in remote.items():
+            if value[1]:remote[pid]=(value[0],0)
         if net_clock>=.1:
             view=match.snapshot()
             net_clock%=.1
@@ -308,7 +311,7 @@ def update(dt):
             g.save(save_data);recorded=True
         elif view['s']!='defeat':recorded=False
         events=view.get('fx',[])
-        fresh=[e for e in events if e[0]>last_fx]
+        fresh=[e for e in events if e[0]>last_fx] if events and events[-1][0]>last_fx else []
         if fresh:
             last_fx=max(e[0] for e in fresh)
             if not muted:

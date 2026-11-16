@@ -2,6 +2,8 @@
 import math
 import os
 import random
+from operator import itemgetter
+from functools import lru_cache
 
 from maps import MAPS, lane
 PADS = MAPS[0]['pads']
@@ -27,6 +29,7 @@ BUTTONS = ['UP','DOWN','LEFT','RIGHT','A','B','X','Y','L1','R1','START','SELECT'
 UP,DOWN,LEFT,RIGHT,A,B,X,Y,L1,R1,START,SELECT = [1<<i for i in range(12)]
 OVERCHARGE_HOLD=.3
 JAMMER_BOUNTY=8
+PROGRESS=itemgetter(1)
 
 
 def jammer_count(wave,players):
@@ -58,15 +61,28 @@ def enemy_xy(ident, progress, map_id=0):
     return lane(progress,(ident*13+ident*ident*3)%21-10,map_id)
 
 
+def enemies_in_range(ordered,points,x,y,radius,map_id):
+    radius2=radius*radius
+    for e in ordered:
+        if e[2]<=0:continue
+        ident=e[0];point=points.get(ident)
+        if point is None:
+            point=enemy_xy(ident,e[1],map_id);points[ident]=point
+        dx=point[0]-x;dy=point[1]-y
+        if dx*dx+dy*dy<=radius2:yield e
+
+
 def wave_template(wave):
     return wave if wave<=10 else 6+(wave-11)%5
 
 
+@lru_cache(maxsize=32)
 def wave_stats(wave):
     extra=max(0,wave-10)
     return 1.16**extra,extra//5,1.05**extra
 
 
+@lru_cache(maxsize=192)
 def enemy_hp(kind,wave):
     return ENEMIES[kind][1]*wave_stats(wave)[0]
 
@@ -180,8 +196,8 @@ class Match:
         self.spawned=0; self.serial=0; self.scan=0.; self.spawn_clock=0.; self.bonus=0
         self.elapsed=0.; self.kills=0; self.spent=0; self.wave_players=1; self.banner_until=0.
         self.scan_due=[i*.1/8 for i in range(8)]
-        self.ordered=[];self.proposed={};self.positions={};self.points={}
-        self.order_dirty=True;self.order_source=self.enemies
+        self.ordered=[];self.points={}
+        self.step_dt=None;self.steps=()
         self.spawn_interval=.65
         self.over={};self.jammers=[];self.jammer_pending=0;self.jammer_clock=0.
         self.rng=random.Random(1300+map_id)
@@ -389,14 +405,13 @@ class Match:
             else:
                 if r is None:r=[pid,0.];self.repairs[w]=r
                 r[1]+=dt
-        else:
+        elif self.repairs:
             for w,r in list(self.repairs.items()):
                 if r[0]==pid:del self.repairs[w]
 
     def spawn(self,kind,progress):
         self.spawned+=1;self.serial+=1;ident=self.serial*8+kind
         self.enemies.append([ident,progress,enemy_hp(kind,self.wave),0.,0.,0.,0.,0.,{}])
-        self.order_dirty=True
 
     def spawn_jammer(self):
         if len(self.enemies)+len(self.jammers)>=64:return False
@@ -413,22 +428,10 @@ class Match:
         return True
 
     def progress_order(self):
-        # Reuse the previous order: insertion repair is linear when nobody passes.
-        # Spawn serial breaks equal-progress ties exactly as the original stable sort.
-        ordered=self.ordered
-        if self.order_dirty or self.order_source is not self.enemies or len(ordered)!=len(self.enemies):
-            # Identity set also supports external fixtures replacing the enemy list.
-            alive={e[0] for e in self.enemies}
-            ordered[:]=[e for e in ordered if e[0] in alive]
-            known={e[0] for e in ordered}
-            ordered.extend(e for e in self.enemies if e[0] not in known)
-            self.order_dirty=False;self.order_source=self.enemies
-        for i in range(1,len(ordered)):
-            e=ordered[i];j=i
-            while j and (ordered[j-1][1]<e[1] or (ordered[j-1][1]==e[1] and ordered[j-1][0]>e[0])):
-                ordered[j]=ordered[j-1];j-=1
-            ordered[j]=e
-        return ordered
+        # C Timsort beats Python insertion repair at the bounded 64-enemy cap.
+        # Sort spawn order so ties retain exactly the original target priority.
+        self.ordered=sorted(self.enemies,key=PROGRESS,reverse=True)
+        return self.ordered
 
     def effect(self,index,a,b):
         self.event+=1;self.effects.append([self.event,index,round(a[0],1),round(a[1],1),round(b[0],1),round(b[1],1),self.time])
@@ -436,9 +439,10 @@ class Match:
 
     def tick(self,dt,inputs):
         self.time+=dt
-        expire(self.bank,self.time,self.players)
-        for pid,m in list(self.markers.items()):
-            if m[1]<=self.time:self.markers.pop(pid,None)
+        if self.bank['r']:expire(self.bank,self.time,self.players)
+        if self.markers:
+            for pid,m in list(self.markers.items()):
+                if m[1]<=self.time:self.markers.pop(pid,None)
         while self.effects and self.time-self.effects[0][6]>=1.2:self.effects.pop(0)
         for pid in sorted(self.players,key=int):
             held,pressed=inputs.get(pid,(0,0))
@@ -488,37 +492,56 @@ class Match:
         if self.pending and len(self.enemies)+len(self.jammers)<64 and self.spawn_clock<=0:
             kind,progress=self.pending.pop(0);self.spawn(kind,progress)
             self.spawn_clock=self.spawn_interval
-        proposed=self.proposed;proposed.clear()
-        for e in self.enemies:
-            kind=enemy_kind(e[0])
+        # Advance in the pre-movement order, applying both gate queues in place.
+        # No proposed/accepted position dictionaries or extra enemy passes.
+        gate0,gate1=self.map['gates'];walls=self.walls
+        limit0=gate0 if walls[0]>0 else None
+        limit1=gate1 if walls[1]>0 else None
+        attacker0=attacker1=None
+        now=self.time;enemy_data=ENEMIES
+        if dt!=self.step_dt:
+            self.step_dt=dt;self.steps=tuple(row[2]*dt for row in enemy_data)
+        steps=self.steps
+        length=self.map['length'];cleanup_needed=False
+        for e in self.progress_order():
+            ident=e[0];kind=ident%8;old=e[1]
             if e[5]>0:e[5]=max(0,e[5]-dt)
             if e[8]:
                 for strength in tuple(e[8]):
-                    if e[8][strength]<=self.time:del e[8][strength]
+                    if e[8][strength]<=now:del e[8][strength]
                 e[4]=max(e[8],default=0)
-                e[3]=max(e[8].values(),default=self.time)-self.time
+                e[3]=max(e[8].values(),default=now)-now
             else:e[4]=0;e[3]=0.
-            speed=0 if e[5]>0 else ENEMIES[kind][2]*(1-e[4]*(.5 if kind==5 else 1))
-            proposed[e[0]]=e[1]+speed*dt
-        ordered=self.progress_order()
-        positions,attackers=wall_queue(ordered,proposed,self.walls,self.positions,self.map['gates'])
-        for w,ident in enumerate(attackers):
-            if ident is not None:self.walls[w]=max(0,self.walls[w]-ENEMIES[enemy_kind(ident)][5]*dt)
-        for e in self.enemies:e[1]=positions[e[0]]
-        due=False
+            if e[5]>0:step=0.
+            elif e[4]:step=enemy_data[kind][2]*(1-e[4]*(.5 if kind==5 else 1))*dt
+            else:step=steps[kind]
+            value=old+step
+            if limit0 is not None and old<=gate0+.01 and value>=limit0:
+                value=max(old,limit0)
+                if attacker0 is None and value>=gate0-.01:attacker0=ident
+                limit0=value-14
+            elif limit1 is not None and old<=gate1+.01 and value>=limit1:
+                value=max(old,limit1)
+                if attacker1 is None and value>=gate1-.01:attacker1=ident
+                limit1=value-14
+            e[1]=value
+            if value>=length or e[2]<=0:cleanup_needed=True
+        if attacker0 is not None:walls[0]=max(0,walls[0]-enemy_data[attacker0%8][5]*dt)
+        if attacker1 is not None:walls[1]=max(0,walls[1]-enemy_data[attacker1%8][5]*dt)
+        due=[]
         for pad,t in enumerate(self.towers):
             self.scan_due[pad]-=dt
             if t:t[2]-=dt*(1.5 if pad in self.over else 1)
-            if self.scan_due[pad]<=0:due=True
+            if self.scan_due[pad]<=0:
+                self.scan_due[pad]+=.1
+                if t is not None and t[2]<=0 and pad not in jammed:due.append(pad)
         if due:
             armor_bonus=wave_stats(self.wave)[1]
-            points=self.points;points.clear()
-            points.update((e[0],enemy_xy(e[0],e[1],self.map_id)) for e in self.enemies if e[2]>0)
+            points={}
+            self.points=points
             ordered=self.progress_order()
-            for pad,t in enumerate(self.towers):
-                if self.scan_due[pad]>0:continue
-                self.scan_due[pad]+=.1
-                if t is None or t[2]>0 or pad in jammed:continue
+            for pad in due:
+                t=self.towers[pad]
                 index=t[0];price,amount,interval,radius,blast,slow,seconds=TOWERS[index]
                 amount=tower_damage(t)
                 x,y=self.map['pads'][pad]
@@ -528,13 +551,13 @@ class Match:
                     t[2]=max(-.1,t[2])+interval
                     if flyer[4]<=0:self.jammers.remove(flyer);self.bank['cash']+=JAMMER_BOUNTY;self.kills+=1
                     continue
-                target=next((e for e in ordered if e[2]>0 and (points[e[0]][0]-x)**2+(points[e[0]][1]-y)**2<=radius*radius),None)
+                target=next(enemies_in_range(ordered,points,x,y,radius,self.map_id),None)
                 if target is None:continue
                 tx,ty=points[target[0]]
-                nearby=[e for e in ordered if e[2]>0 and (points[e[0]][0]-x)**2+(points[e[0]][1]-y)**2<=radius*radius] if index in (6,10) else None
-                victims=nearby if index in (6,10) else [e for e in ordered if e[2]>0 and (points[e[0]][0]-tx)**2+(points[e[0]][1]-ty)**2<=blast*blast] if blast else [target]
+                victims=list(enemies_in_range(ordered,points,x,y,radius,self.map_id)) if index in (6,10) else list(enemies_in_range(ordered,points,tx,ty,blast,self.map_id)) if blast else [target]
                 for e in victims:
                     kind=enemy_kind(e[0]);e[2]-=damage(amount,ENEMIES[kind][3]+armor_bonus,e[5]>0,index==3)
+                    if e[2]<=0:cleanup_needed=True
                     if slow:
                         e[8][slow]=self.time+seconds
                         e[4]=max(e[4],slow);e[3]=max(e[3],seconds)
@@ -543,15 +566,14 @@ class Match:
                     if index==6:e[7]=self.time+.3
                 self.effect(index,(x,y-16),(tx,ty));t[2]=max(-.1,t[2])+interval
         # Escapes apply before the wave-clear check, including a simultaneous final hit.
-        for e in self.enemies[:]:
-            kind=enemy_kind(e[0])
-            if e[1]>=self.map['length']:
+        for e in self.enemies[:] if cleanup_needed else ():
+            if e[1]>=length:
+                kind=e[0]%8
                 if not self.debug_wave:self.core=max(0,self.core-ENEMIES[kind][6])
                 self.enemies.remove(e)
-                self.order_dirty=True
             elif e[2]<=0:
+                kind=e[0]%8
                 self.kills+=1;self.bank['cash']+=bounty(kind,self.wave);self.enemies.remove(e)
-                self.order_dirty=True
                 point=self.points.get(e[0]) if due else None
                 if point is None:point=enemy_xy(e[0],e[1],self.map_id)
                 self.effect(-1,point,point)

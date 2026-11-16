@@ -1,0 +1,9 @@
+Инейный перегон 1326.0
+MAXED 1p ACTIVE: defeat wave=33 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[30, 30, 30, 33]
+MAXED 1p PASSIVE: defeat wave=24 build=(2, 3, 7, 3, 7, 7, 10, 11) candidates=[24, 22, 23, 23]
+MAXED 2p ACTIVE: defeat wave=32 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[30, 30, 30, 32]
+MAXED 2p PASSIVE: defeat wave=24 build=(2, 3, 7, 3, 7, 7, 10, 11) candidates=[24, 24, 24, 24]
+MAXED 3p ACTIVE: defeat wave=32 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[30, 30, 31, 32]
+MAXED 3p PASSIVE: defeat wave=23 build=(2, 3, 7, 3, 7, 7, 10, 11) candidates=[23, 23, 22, 23]
+MAXED 4p ACTIVE: defeat wave=33 build=(7, 3, 7, 7, 11, 7, 10, 11) candidates=[30, 31, 31, 33]
+MAXED 4p PASSIVE: defeat wave=22 build=(3, 3, 7, 7, 10, 7, 7, 11) candidates=[21, 22, 21, 22]

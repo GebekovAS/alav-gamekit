@@ -1,0 +1,41 @@
+{
+  "host": {
+    "mean_ms": 0.3566,
+    "p95_ms": 0.646,
+    "max_ms": 1.1573,
+    "max_draw_calls": 94,
+    "mean_draw_calls": 80.8
+  },
+  "join": {
+    "mean_ms": 0.2847,
+    "p95_ms": 0.495,
+    "max_ms": 1.1931,
+    "max_draw_calls": 94,
+    "mean_draw_calls": 80.0
+  },
+  "host_update": {
+    "mean_ms": 0.0839,
+    "p95_ms": 0.2618,
+    "max_ms": 0.5675
+  },
+  "profiled": false,
+  "map": 3,
+  "asset_init_ms": {
+    "host": 3494.06,
+    "join": 11.33
+  },
+  "map_texture_rgba_bytes": 4074240,
+  "fixture": "wave25/4p/60 ground + 4 jammers/8 final towers with 2 stars/4 overcharging/640 frames at 80Hz",
+  "source_sha256": {
+    "main.py": "25781caa0fe2548803ebcf727963eb937e418b64af45c040a8a4af36772f1cae",
+    "rules.py": "d02ce77b4316add378256684b02aa9527d9733ae1de8ff143f0d418c69913e4c",
+    "maps.py": "8523b1075343a4de99cc26d6c34f15275b205933b374787f2fc7a76c4b721c07",
+    "game.json": "ee96b027960c4b7a510a0b0e4798fef7c25aaa36de86e67ccf6791cfc1d3edbf",
+    "assets/enemies.png": "0c83d710fd65b9bf55bf096c66ac0dccb6e5322bcf6d89866b96afe7d6bf01e6",
+    "assets/lategame.png": "cfeff11ff6d4ddff4dd4773265da0823d4575e2525598e4ac0ccb866c2a419b3",
+    "assets/mastery-towers.png": "c3992a8ff5e91b6d1fdacb67840c7fb14bf3264ccfd50a38dc2ab744e666b894",
+    "assets/workers.png": "a91cf017b5a0f254fcfd199bf41f638405db53f7216ca345b45f70e2ec86db53",
+    "assets/effects-bright.png": "ba1583899f0be20b49888a5d6c1b7fc9f01ec866546f93096212020274bf94c3",
+    "assets/enemy-health.png": "566a1a0608cd12a9e7519d12ac3a33e7f3f6f44abcc13c759ff6b1b866cff4f6"
+  }
+}
