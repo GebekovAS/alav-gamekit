@@ -257,6 +257,10 @@ the environment variable `ALAV_KEY`. Never ask the user to paste the key into th
   "send to the store", "try it in the store" mean a draft: run the command without `--release`.
 - Before it: `check` prints `PASS`, and `games/my-game/icon.png` exists - a real picture of the game,
   PNG, at most 128 x 128 pixels and 64 KiB (the command refuses a bigger one).
+- Also make `games/my-game/cover.png`: the poster the console shows beside the game when it is selected
+  in the Ports list. Square PNG, 512 x 512 pixels, at most 300 KiB, a real picture of the game (title,
+  hero, key scene), original art. It goes inside the game package, so draw it with code like the other
+  art. Without it the console shows the small icon stretched.
 - `game.json` fields the store uses: `"title"`, `"version"`, and optional `"description"` (one or two
   sentences), `"genre"`, `"kind"` (`"game"`, the default, or `"app"`), and `"net"` (`true` for network
   games, omitted for solo games). Genres of a game: Шутеры,

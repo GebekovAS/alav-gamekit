@@ -14,7 +14,8 @@ description: Package an ALAV Store game for the console (SD card file, store zip
    set `ALAV_HOST` (the first time the user confirms this PC on the console with A) and use the `deploy` commands from the section
    "Trying the game on the real console" of `AGENTS.md` (`deploy`, `--check`, `--bot`, `--shot`, `--logs`).
 5. Only if the user asked to put the game in the ALAV Store: `games/<slug>/icon.png` must exist (square,
-   not a placeholder letter, PNG, at most 128x128 px and 64 KiB) and the user must have set `ALAV_KEY`
+   not a placeholder letter, PNG, at most 128x128 px and 64 KiB), so should `games/<slug>/cover.png`
+   (the Ports-list poster: square 512x512 PNG, at most 300 KiB), and the user must have set `ALAV_KEY`
    (a developer key from https://alav.online/developers; never ask for it in the chat). Then
    `python tool.py publish <slug>` uploads a **draft** that only the developer sees.
    `python tool.py publish <slug> --release` sends it for release - **use `--release` only when

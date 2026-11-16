@@ -316,6 +316,8 @@ def cmd_check(args):
             problems += judge(name, proc, shots, network)[0]
     if not os.path.isfile(os.path.join(path, "icon.png")):
         print("  note: no icon.png yet (needed only for publishing in the ALAV Store)")
+    if not os.path.isfile(os.path.join(path, "cover.png")):
+        print("  note: no cover.png yet (the poster beside the game in the console's Ports list; the icon is used instead)")
     if problems:
         print("FAIL")
         for p in problems:
