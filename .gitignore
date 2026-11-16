@@ -6,3 +6,5 @@ dist/
 out/
 save.json
 save.json.tmp
+.impeccable/
+*-sha256.json
