@@ -45,7 +45,7 @@ and do not add `sys.path` tricks to the game.
 | `fighter` | one-on-one fighting, health bars, rounds, a CPU opponent |
 | `tanks` | top-down grid map with destructible walls, enemies, bullets |
 | `puzzle` | turn-based grid puzzles, levels, undo |
-| `netduel` | multiplayer over Wi-Fi (host + join) |
+| `netduel` | multiplayer over Wi-Fi or the internet (host + join) |
 
 ## Hard rules
 
