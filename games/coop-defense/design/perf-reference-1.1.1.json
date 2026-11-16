@@ -1,0 +1,27 @@
+{
+  "host": {
+    "mean_ms": 0.8191,
+    "p95_ms": 1.1367,
+    "max_ms": 7.7865,
+    "max_draw_calls": 92,
+    "mean_draw_calls": 82.9
+  },
+  "join": {
+    "mean_ms": 0.5691,
+    "p95_ms": 0.7542,
+    "max_ms": 4.5036,
+    "max_draw_calls": 89,
+    "mean_draw_calls": 80.1
+  },
+  "host_update": {
+    "mean_ms": 0.2449,
+    "p95_ms": 0.4766,
+    "max_ms": 0.691
+  },
+  "map": "pre-task reference",
+  "fixture": "wave20/4p/64 preload/8 final towers/640 frames at 80Hz",
+  "source_sha256": {
+    "main.py": "972f105f16ba7d39c7a6b7f80d41bc8078af40bc12091972e05ef1dd1f0a310d",
+    "rules.py": "2023155a0ea1401fd09160132da409aa41dac82bb189fc8dcf91d4635d8e9b4f"
+  }
+}

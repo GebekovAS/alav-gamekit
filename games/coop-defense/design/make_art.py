@@ -482,3 +482,64 @@ for i,c in enumerate(COLORS):
     im.putdata([(*rgb,a) if (r,g,b)==(101,169,224) else (r,g,b,a) for r,g,b,a in im.get_flattened_data()])
     pins.alpha_composite(im,(i*24,0))
 save(pins,'pins.png')
+
+# All geometry comes from the same data as authoritative rules.
+import importlib.util
+spec=importlib.util.spec_from_file_location('map_art_data',OUT.parent/'maps.py')
+map_data=importlib.util.module_from_spec(spec);spec.loader.exec_module(map_data)
+previews=Image.new('RGB',(480,82))
+for ident,m in enumerate(map_data.MAPS):
+    if ident==0:
+        full=Image.open(OUT/'yard-open.png').convert('RGB')
+    else:
+        rng=random.Random(490+ident)
+        ground=[P[7],P[6],P[0],P[3]][ident]
+        im=Image.new('RGB',(300,204),ground);d=ImageDraw.Draw(im)
+        road=[(x//2,(y-32)//2) for x,y in m['route']]
+        def clear_ground(x,y,r=14):
+            for a,b in zip(road,road[1:]):
+                if min(a[0],b[0])-r<=x<=max(a[0],b[0])+r and min(a[1],b[1])-r<=y<=max(a[1],b[1])+r:return False
+            return all(abs(x-px/2)>r or abs(y-(py-32)/2)>r for px,py in m['pads']+m['spawns']+[m['core']])
+        # Sparse material flecks and recognizable scenery on free grass only.
+        for y in range(10,197,5):
+            for x in range(8,293,5):
+                if clear_ground(x,y,6) and rng.random()<.25:
+                    d.rectangle((x,y,x+2,y+1),fill=P[14] if ident==1 else P[1] if ident==2 else P[4])
+        for y in range(20,191,27):
+            for x in range(18,290,35):
+                if not clear_ground(x,y,19):continue
+                if ident==1:
+                    d.ellipse((x-9,y-3,x+9,y+4),fill=P[18]);d.line((x-6,y,x+3,y),fill=P[19])
+                    d.rectangle((x+5,y-9,x+12,y-3),fill=P[14]);d.line((x+6,y-9,x+11,y-9),fill=P[16])
+                elif ident==2:
+                    d.line((x-12,y+4,x+13,y+4),fill=P[2],width=2)
+                    d.line((x-12,y+10,x+13,y+10),fill=P[2],width=2)
+                    for xx in range(x-10,x+14,6):d.line((xx,y+2,xx,y+12),fill=P[14])
+                    d.rectangle((x-1,y-12,x+1,y+1),fill=P[2]);d.rectangle((x-4,y-14,x+4,y-11),fill=P[17])
+                    d.line((x-2,y-10,x+2,y-10),fill=P[4])
+                else:
+                    d.polygon([(x-12,y),(x-4,y-6),(x+10,y-2),(x+13,y+5),(x-8,y+6)],fill=P[23])
+                    d.line((x-6,y+1,x+4,y-2),fill=P[22],width=2)
+                    d.rectangle((x-9,y-8,x-5,y-5),fill=P[4])
+        d.line(road,fill=INK,width=25,joint='curve')
+        d.line(road,fill=P[16],width=23,joint='curve')
+        d.line(road,fill=P[14],width=21,joint='curve')
+        for a,b in zip(road,road[1:]):
+            for off in (-6,6):
+                delta=(0,off) if a[1]==b[1] else (off,0)
+                d.line((a[0]+delta[0],a[1]+delta[1],b[0]+delta[0],b[1]+delta[1]),fill=P[15],width=2)
+        for px,py in m['pads']:
+            x,y=px//2,(py-32)//2
+            d.rectangle((x-12,y-9,x+12,y+11),fill=ground)
+            d.rectangle((x-11,y-8,x+11,y+8),fill=INK)
+            d.rectangle((x-10,y-7,x+10,y+5),fill=LIGHT)
+            d.line((x-9,y-7,x+9,y-7),fill=CREAM)
+            d.rectangle((x-8,y-5,x+8,y+3),fill=MID)
+            d.line((x-3,y-1,x+3,y-1),fill=P[20],width=2)
+            d.line((x,y-4,x,y+2),fill=P[20],width=2)
+        d.line((8,5,290,5),fill=INK,width=5);d.line((8,4,290,4),fill=MID,width=3)
+        for x in range(14,291,24):d.rectangle((x,2,x+2,7),fill=STEEL)
+        full=im.resize((600,408),Image.Resampling.NEAREST)
+    save(full,'map-%d.png'%(ident+1))
+    previews.paste(full.resize((120,82),Image.Resampling.NEAREST),(ident*120,0))
+save(previews,'map-previews.png')

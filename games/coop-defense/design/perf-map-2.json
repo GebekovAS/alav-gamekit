@@ -1,0 +1,34 @@
+{
+  "host": {
+    "mean_ms": 0.3776,
+    "p95_ms": 0.5418,
+    "max_ms": 0.7723,
+    "max_draw_calls": 94,
+    "mean_draw_calls": 84.2
+  },
+  "join": {
+    "mean_ms": 0.2434,
+    "p95_ms": 0.3078,
+    "max_ms": 0.5813,
+    "max_draw_calls": 94,
+    "mean_draw_calls": 83.5
+  },
+  "host_update": {
+    "mean_ms": 0.1465,
+    "p95_ms": 0.2888,
+    "max_ms": 0.4769
+  },
+  "map": 1,
+  "asset_init_ms": {
+    "host": 4633.43,
+    "join": 10.08
+  },
+  "map_texture_rgba_bytes": 4074240,
+  "fixture": "wave20/4p/64 preload/8 final towers/640 frames at 80Hz",
+  "source_sha256": {
+    "main.py": "226e9d65e326df8d541b46d81655246feaeafd7fd28d69d06a2aed724593a605",
+    "rules.py": "1b76abf44f8b970094ddc18dcb1ff8896083cf45696d409103aba43f96c6d6e1",
+    "maps.py": "8523b1075343a4de99cc26d6c34f15275b205933b374787f2fc7a76c4b721c07",
+    "assets/enemies.png": "0c83d710fd65b9bf55bf096c66ac0dccb6e5322bcf6d89866b96afe7d6bf01e6"
+  }
+}

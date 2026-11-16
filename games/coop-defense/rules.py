@@ -2,10 +2,11 @@
 import math
 import os
 
-PADS = [(104,100),(224,100),(164,190),(374,195),(374,250),(104,270),(225,355),(434,346)]
-ROUTE = [(44,146),(284,146),(284,236),(164,236),(164,296),(524,296)]
-WALL_PROGRESS = [300,750]
-WALL_POS = [(284,206),(404,296)]
+from maps import MAPS, lane
+PADS = MAPS[0]['pads']
+ROUTE = MAPS[0]['route']
+WALL_PROGRESS = MAPS[0]['gates']
+WALL_POS = MAPS[0]['walls']
 NAMES = ['Клепатель I','Клепатель II','Шквал','Молот','Котёл I','Котёл II','Жаровня','Мортира','Стужа I','Стужа II','Мороз','Ледокол']
 # price, damage/hit, interval, range, blast radius, slow fraction, status seconds
 TOWERS = [(50,10,.6,120,0,0,0),(60,18,.55,130,0,0,0),
@@ -25,22 +26,12 @@ BUTTONS = ['UP','DOWN','LEFT','RIGHT','A','B','X','Y','L1','R1','START','SELECT'
 UP,DOWN,LEFT,RIGHT,A,B,X,Y,L1,R1,START,SELECT = [1<<i for i in range(12)]
 
 
-def lane(progress, offset=0):
-    # Fixed map, five straight segments; no per-enemy waypoint traversal.
-    if progress<=240:return 44+progress,146+offset
-    if progress<=330:return 284-offset,progress-94
-    if progress<=450:return 614-progress,236-offset
-    if progress<=510:return 164-offset,progress-214
-    if progress<=870:return progress-346,296+offset
-    return ROUTE[-1]
-
-
 def enemy_kind(ident):
     return ident % 8
 
 
-def enemy_xy(ident, progress):
-    return lane(progress,(ident*13+ident*ident*3)%21-10)
+def enemy_xy(ident, progress, map_id=0):
+    return lane(progress,(ident*13+ident*ident*3)%21-10,map_id)
 
 
 def wave_template(wave):
@@ -125,20 +116,20 @@ def repair_quote(hp):
     return healed,math.ceil(healed/5)
 
 
-def wall_queue(enemies, proposed, walls, result=None):
+def wall_queue(enemies, proposed, walls, result=None, gates=WALL_PROGRESS):
     """Only enemies stopped by a closed gate queue; each gate has one attacker.
 
     enemies sorted by current progress descending; returns positions and attacker ids.
     Spacing is along the route, independent of the decorative lateral lane.
     """
-    limits=[p if hp>0 else None for p,hp in zip(WALL_PROGRESS,walls)]
+    limits=[p if hp>0 else None for p,hp in zip(gates,walls)]
     attackers=[None,None]
     if result is None:result={}
     else:result.clear()
     for e in enemies:
         ident,old=e[0],e[1]
         value=proposed[ident]
-        for w,gate in enumerate(WALL_PROGRESS):
+        for w,gate in enumerate(gates):
             if limits[w] is None or old>gate+.01:continue
             if value>=limits[w]:
                 value=max(old,limits[w])
@@ -154,7 +145,9 @@ def rect_hit(a,b):
 
 
 class Match:
-    def __init__(self, hit=rect_hit):
+    def __init__(self, hit=rect_hit, map_id=0):
+        self.map_id=map_id
+        self.map=MAPS[map_id]
         self.hit=hit
         self.phase='room'; self.time=0.; self.timer=0.; self.wave=0
         self.bank=bank_new(); self.core=100; self.walls=[150.,150.]
@@ -175,8 +168,15 @@ class Match:
             used={p['slot'] for p in self.players.values()}
             i=next(slot for slot in range(4) if slot not in used)
             self.bank['seats'][pid]=i
-            self.players[pid]={'x':465.+(i%2)*65,'y':355.+(i//2)*30,'fx':1,'fy':0,
+            self.players[pid]={'x':float(self.map['spawns'][i][0]),'y':float(self.map['spawns'][i][1]),'fx':1,'fy':0,
                 'slot':i,'menu':'','sel':0,'target':-1,'ready':False,'msg':'','until':0.,'mark':-10.}
+
+    def choose_map(self,map_id):
+        if self.phase!='room':return
+        self.map_id=map_id;self.map=MAPS[map_id]
+        for p in self.players.values():
+            p['x'],p['y']=self.map['spawns'][p['slot']]
+            p['ready']=False;p['target']=-1
 
     def remove_player(self,pid):
         self.players.pop(pid,None); self.bank['r'].pop(pid,None); self.markers.pop(pid,None)
@@ -214,8 +214,9 @@ class Match:
 
     def targets(self,p):
         choices=[]
-        for i,(x,y) in enumerate(PADS+WALL_POS):
+        for i,(x,y) in enumerate(self.map['pads']+self.map['walls']):
             dx=x-p['x'];dy=y-p['y'];d=dx*dx+dy*dy
+            if i>=8 and self.walls[i-8]>=150:continue
             if d<=42*42:choices.append((d,-(dx*p['fx']+dy*p['fy']),i))
         return [v[2] for v in sorted(choices)]
 
@@ -234,10 +235,10 @@ class Match:
         spent=(old[1] if old else 0)+TOWERS[index][0]
         self.towers[pad]=[index,spent,0.]
         # A tower may be built under a worker; move that worker onto free ground.
-        blockers=[(509,281,30,30)]+[(PADS[i][0]-15,PADS[i][1]-15,30,30) for i,t in enumerate(self.towers) if t]
+        blockers=[(self.map['core'][0]-15,self.map['core'][1]-15,30,30)]+[(self.map['pads'][i][0]-15,self.map['pads'][i][1]-15,30,30) for i,t in enumerate(self.towers) if t]
         for q in self.players.values():
-            if self.hit((q['x']-9,q['y']-10,18,20),(PADS[pad][0]-15,PADS[pad][1]-15,30,30)):
-                x,y=PADS[pad]
+            if self.hit((q['x']-9,q['y']-10,18,20),(self.map['pads'][pad][0]-15,self.map['pads'][pad][1]-15,30,30)):
+                x,y=self.map['pads'][pad]
                 for nx,ny in [(x-38,y),(x+38,y),(x,y-38),(x,y+38)]:
                     if 42<=nx<=568 and 67<=ny<=387 and not any(self.hit((nx-9,ny-10,18,20),b) for b in blockers):
                         q['x'],q['y']=nx,ny;break
@@ -260,6 +261,9 @@ class Match:
             p['ready']=not p['ready']
             return
         if self.phase=='room':
+            if pid=='0' and pressed&(LEFT|RIGHT):
+                self.choose_map((self.map_id+(-1 if pressed&LEFT else 1))%len(MAPS))
+                return
             if pressed&A:p['ready']=not p['ready']
             return
         if self.phase=='defeat':return
@@ -287,8 +291,8 @@ class Match:
                 speed=120*dt/(math.sqrt(2) if dx and dy else 1)
                 for axis,delta in [('x',dx*speed),('y',dy*speed)]:
                     x=p['x']+(delta if axis=='x' else 0);y=p['y']+(delta if axis=='y' else 0)
-                    blockers=[(509,281,30,30)]
-                    blockers.extend((PADS[i][0]-15,PADS[i][1]-15,30,30) for i,t in enumerate(self.towers) if t)
+                    blockers=[(self.map['core'][0]-15,self.map['core'][1]-15,30,30)]
+                    blockers.extend((self.map['pads'][i][0]-15,self.map['pads'][i][1]-15,30,30) for i,t in enumerate(self.towers) if t)
                     if not any(self.hit((x-9,y-10,18,20),b) for b in blockers):
                         p[axis]=max(42,min(568,x)) if axis=='x' else max(67,min(387,y))
                 choices=self.targets(p)
@@ -379,7 +383,7 @@ class Match:
                 del self.repairs[w]
                 continue
             broken=self.walls[w]<=0
-            if broken and any(abs(e[1]-WALL_PROGRESS[w])<=20 for e in self.enemies):
+            if broken and any(abs(e[1]-self.map['gates'][w])<=20 for e in self.enemies):
                 r[1]=0;self.say(r[0],'Уберите врагов от заслона');continue
             if r[1]<(2 if broken else 1):continue
             heal,cost=(25,10) if broken else repair_quote(self.walls[w])
@@ -403,7 +407,7 @@ class Match:
             speed=slow_speed(ENEMIES[kind][2],e[4],kind==5,e[5]>0)
             proposed[e[0]]=e[1]+speed*dt
         ordered=self.progress_order()
-        positions,attackers=wall_queue(ordered,proposed,self.walls,self.positions)
+        positions,attackers=wall_queue(ordered,proposed,self.walls,self.positions,self.map['gates'])
         for w,ident in enumerate(attackers):
             if ident is not None:self.walls[w]=max(0,self.walls[w]-ENEMIES[enemy_kind(ident)][5]*dt)
         for e in self.enemies:e[1]=positions[e[0]]
@@ -415,14 +419,14 @@ class Match:
         if due:
             armor_bonus=wave_stats(self.wave)[1]
             points=self.points;points.clear()
-            points.update((e[0],enemy_xy(e[0],e[1])) for e in self.enemies if e[2]>0)
+            points.update((e[0],enemy_xy(e[0],e[1],self.map_id)) for e in self.enemies if e[2]>0)
             ordered=self.progress_order()
             for pad,t in enumerate(self.towers):
                 if self.scan_due[pad]>0:continue
                 self.scan_due[pad]+=.1
                 if t is None or t[2]>0:continue
                 index=t[0];price,amount,interval,radius,blast,slow,seconds=TOWERS[index]
-                x,y=PADS[pad]
+                x,y=self.map['pads'][pad]
                 target=next((e for e in ordered if e[2]>0 and (points[e[0]][0]-x)**2+(points[e[0]][1]-y)**2<=radius*radius),None)
                 if target is None:continue
                 tx,ty=points[target[0]]
@@ -440,7 +444,7 @@ class Match:
         # Escapes apply before the wave-clear check, including a simultaneous final hit.
         for e in self.enemies[:]:
             kind=enemy_kind(e[0])
-            if e[1]>=870:
+            if e[1]>=self.map['length']:
                 if not self.debug_wave:self.core=max(0,self.core-ENEMIES[kind][6])
                 self.enemies.remove(e)
                 self.order_dirty=True
@@ -448,7 +452,7 @@ class Match:
                 self.kills+=1;self.bank['cash']+=bounty(kind,self.wave);self.enemies.remove(e)
                 self.order_dirty=True
                 point=self.points.get(e[0]) if due else None
-                if point is None:point=enemy_xy(e[0],e[1])
+                if point is None:point=enemy_xy(e[0],e[1],self.map_id)
                 self.effect(-1,point,point)
                 if kind==4:
                     for j in range(6):
@@ -474,7 +478,7 @@ class Match:
             if e[2]<health[kind] or e[3]>0 or e[5]>0 or e[6]>self.time or e[7]>self.time:
                 row.extend([round(max(0,e[2]),1),2 if e[5]>0 else 1 if e[3]>0 else 3 if e[6]>self.time else 4 if e[7]>self.time else 0])
             enemies.append(row)
-        return {'banner':self.wave if self.time<self.banner_until else 0,'team':self.wave_players,'s':self.phase,'n':self.wave,'c':self.bank['cash'],'h':self.core,'tm':round(self.timer,1),
+        return {'map':self.map_id,'banner':self.wave if self.time<self.banner_until else 0,'team':self.wave_players,'s':self.phase,'n':self.wave,'c':self.bank['cash'],'h':self.core,'tm':round(self.timer,1),
                 'now':round(self.time,2),'p':ps,'e':enemies,'t':[t[:2] if t else None for t in self.towers],
                 'w':[round(h) for h in self.walls],'r':self.bank['r'],'m':self.markers,
                 'fix':{str(w):r[0] for w,r in self.repairs.items()},'fx':self.effects,

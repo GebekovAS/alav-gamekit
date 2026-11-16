@@ -27,6 +27,7 @@ for name,path in [('alav',ROOT/'kit/alav.py')]:
     module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module)
 g=module;g.GAME_DIR=str(GAME)
 g.down=lambda key:False;g.pressed=lambda key:False;g.tone=lambda *a,**kw:None
+g.load=lambda:{};g.save=lambda data:None
 
 class Wire:
     def __init__(self,host):self.is_host=host;self.peers={1:{},2:{},3:{}} if host else {};self.inbox=[]
@@ -47,12 +48,15 @@ def stats(values):
 if __name__=='__main__':
     label=sys.argv[1] if len(sys.argv)>1 else 'after'
     assert label in ('before','after')
-    destination=GAME/'design'/('perf-%s.json'%label)
+    map_id=int(sys.argv[2]) if len(sys.argv)>2 else None
+    suffix=label if map_id is None else 'map-%d'%(map_id+1)
+    destination=GAME/'design'/('perf-%s.json'%suffix)
     if label=='before' and destination.exists():
         raise SystemExit('Baseline already captured before optimization; keep it. Use after for current code.')
     for key in ('COOP_DEBUG_WAVE','COOP_DEBUG_CASH','COOP_DEBUG_TOWERS'):os.environ.pop(key,None)
-    host=load();client=load()
-    m=host['Match'](g.hit)
+    begin_load=time.perf_counter();host=load();host_load_ms=1000*(time.perf_counter()-begin_load)
+    begin_load=time.perf_counter();client=load();client_load_ms=1000*(time.perf_counter()-begin_load)
+    m=host['Match'](g.hit,map_id or 0)
     for pid in range(4):m.add_player(str(pid))
     m.start();m.wave=19;m.start_wave()
     build=(2,3,7,3,7,6,10,11)
@@ -61,6 +65,8 @@ if __name__=='__main__':
         kind,_=m.pending.pop(0);m.spawn(kind,60+(i//8)*16+(i%8)*2)
     host.update(net=Wire(True),match=m,view=m.snapshot(),known=set(m.players))
     client.update(net=Wire(False),view=copy.deepcopy(host['view']),my_id='1')
+    if map_id is not None:
+        host['draw']();g._screenshot(str(GAME/'design'/('perf-map-%d-start.png'%(map_id+1))))
     times={'host':[],'join':[],'simulation':[]};calls={'host':[],'join':[]};peaks={}
     # Warm texture/font caches without advancing the fixture.
     host['draw']();client['draw']()
@@ -73,11 +79,14 @@ if __name__=='__main__':
             times[role].append((end-start)/1e6);calls[role].append(g._draws)
             if role=='host':times['simulation'].append((mid-start)/1e6)
             if g._draws>peaks.get(role,0):
-                peaks[role]=g._draws;g._screenshot(str(GAME/'design'/('perf-%s-%s.png'%(label,role))))
+                peaks[role]=g._draws;g._screenshot(str(GAME/'design'/('perf-%s-%s.png'%(suffix,role))))
         assert m.wave==20 and m.phase=='wave'
     result={role:dict(stats(times[role]),max_draw_calls=max(calls[role]),mean_draw_calls=round(statistics.mean(calls[role]),1)) for role in calls}
     result['host_update']=stats(times['simulation'])
+    result['map']=m.map_id
+    result['asset_init_ms']={'host':round(host_load_ms,2),'join':round(client_load_ms,2)}
+    result['map_texture_rgba_bytes']=4*600*408*4+480*82*4
     result['fixture']='wave20/4p/64 preload/8 final towers/640 frames at 80Hz'
-    result['source_sha256']={name:hashlib.sha256((GAME/name).read_bytes()).hexdigest() for name in ('main.py','rules.py','assets/enemies.png')}
+    result['source_sha256']={name:hashlib.sha256((GAME/name).read_bytes()).hexdigest() for name in ('main.py','rules.py','maps.py','assets/enemies.png')}
     destination.write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(json.dumps(result,indent=2))

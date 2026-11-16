@@ -129,3 +129,45 @@ The kit and tool were not changed or accessed through private APIs by game code.
   which can occur at different times. Stock-check shots are under
   `design/out/check/coop-defense-{host,join,lobby}/`.
 - Metadata version: **1.1.1**. No deploy, publication, container or installation.
+
+## Version 1.2.0 — four maps (2026-11-16)
+
+The same `probe_perf.py after 0` … `after 3` workload, run sequentially.
+Each process loads all four backgrounds at startup. Only the fixture map varies.
+Network, sound and persistence are substituted by the probe; real rules, update,
+draw and SDL remain. Source hashes are in `perf-map-1.json` … `perf-map-4.json`.
+
+| Map | Mean host / join, ms | p95 host / join, ms | Peak calls host / join | Mean host update, ms |
+|---|---:|---:|---:|---:|
+| 1 | 0.3616 / 0.2463 | 0.5074 / 0.2936 | 90 / 89 | 0.1389 |
+| 2 | 0.3776 / 0.2434 | 0.5418 / 0.3078 | 94 / 94 | 0.1465 |
+| 3 | 0.3517 / 0.2253 | 0.5108 / 0.2750 | 91 / 90 | 0.1354 |
+| 4 | 0.3687 / 0.2370 | 0.5205 / 0.3108 | 95 / 94 | 0.1415 |
+
+Against the original 1.1.1 table above: worst total-frame mean is +3.31% host,
++2.97% join; worst p95 is +6.40% host, +3.39% join; peak calls +3.26% host,
++5.62% join. Thus total-frame means, p95 and draw counts meet the requested +10%.
+Host-update mean alone reaches 0.1465 ms (+10.07% against 0.1331 ms), just outside
+that bound. Individual maximum timings do NOT meet the +10% bound: raw files
+retain them (including one 10.03 ms client OS/runtime pause; cause not established).
+No claim is made that every historical timing statistic passes +10%.
+
+Earlier runs ranged around 0.75–0.98 ms host. A repeat of unchanged pre-task Git
+sources with the same current assets also measured 0.8191 / 0.5691 ms;
+`perf-reference-1.1.1.json` preserves its results and source hashes. The last full
+sequential four-map run above returned to the historical timing range. This is
+observed timing variability, not proof of its cause; absolute maximums are noisy.
+
+`capture_game.py map-1 map-2 map-3 map-4` uses a DIFFERENT fixture: 62 enemies
+spread over the entire route, eight final towers, wave 20. Its pictures are for
+visual/geometry review, not the compact-crowd performance comparison above.
+Its last stock judge reported 0.448 / 0.453 / 0.445 / 0.436 ms, 113 / 111 / 113 /
+111 calls, and warned about exceeding the 0.4 ms PC proxy on all four maps.
+Those warnings remain in `runtime-map-1-map-2-map-3-map-4-check.log`.
+
+Four 600×408 RGBA backgrounds plus the 480×82 thumbnail atlas need 4,074,240 bytes
+of pixel storage (~3.89 MiB; ~3.74 MiB for backgrounds only). This excludes SDL
+bookkeeping. Asset initialization for the second loaded game namespace took
+9–10.2 ms on PC. First initialization took 4–8.3 s and includes lazy kit/SDL/audio
+startup; it is not an isolated PNG decode measurement. No runtime map loads.
+Console startup, memory, CPU timings and real Wi-Fi remain unverified; no deploy.

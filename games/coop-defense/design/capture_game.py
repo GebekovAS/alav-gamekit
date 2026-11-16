@@ -36,6 +36,17 @@ view=match.snapshot()""",
  'milestone':"begin('host',True)\nmatch.wave=20;match.phase='break';match.timer=40;match.banner_until=match.time+2\nview=match.snapshot()",
  'defeat':"begin('host',True)\nmatch.phase='defeat';match.wave=7;match.core=0;match.elapsed=524\nview=match.snapshot()",
 }
+for map_id in range(4):
+    fixtures['map-%d'%(map_id+1)]="""begin('host')
+match.choose_map(%d)
+for i in range(1,4):match.add_player(str(i))
+match.start();match.wave=19;match.start_wave()
+for i,index in enumerate([2,3,7,3,7,6,10,11]):match.towers[i]=[index,300,0.]
+match.pending=[]
+for i in range(58):match.spawn(i%%3,25+i*(match.map['length']-130)/58)
+for k,p in [(3,300),(3,500),(4,600),(5,320)]:match.spawn(k,p)
+view=match.snapshot()"""%map_id
+
 report=io.StringIO()
 try:
     for name,fixture in fixtures.items():
@@ -58,12 +69,12 @@ update=capture_update
         injected+="g.run(update,draw,'Медный дозор')"
         source.write_text(normal.replace("g.run(update,draw,'Медный дозор')",injected),encoding='utf-8')
         with contextlib.redirect_stdout(report):
-            shots,process=tool.headless(str(GAME),120 if name=='wave20' else 60,'-'+name)
+            shots,process=tool.headless(str(GAME),120 if name=='wave20' or name.startswith('map-') else 60,'-'+name)
         with contextlib.redirect_stdout(report):
             problems,stats=tool.judge(name,process,shots,False)
         for file in Path(shots).glob('*'):
-            if file.name in (('frame00120.png','frame00120.txt') if name=='wave20' else ('frame00060.png','frame00060.txt')):
-                shutil.copyfile(file,DESIGN/('runtime-'+name+file.suffix))
+            if file.name in (('frame00120.png','frame00120.txt') if name=='wave20' or name.startswith('map-') else ('frame00060.png','frame00060.txt')):
+                shutil.copyfile(file,DESIGN/((name if name.startswith('map-') else 'runtime-'+name)+file.suffix))
         capture=Path(shots).resolve()
         assert capture.is_relative_to(DESIGN)
         shutil.rmtree(capture)

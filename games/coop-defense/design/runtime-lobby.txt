@@ -1,36 +1,38 @@
 The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ffffffffffffffffffffff#f#kfkf#ffkfkf.#ffffffffffffffffffffff
-gggggggggggggggggggggg#kgkkggkk#kgkkg#gggggggggggggggggggggg
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-llllhhhhhhhhhhhhliiiiiiiiiiiilljjjjjjjjjjjjlmmmmmmmmmmmmllll
-nnnn............n............nn............n............nnnn
-oooo.....h#.....o......i.....oo.....j......o............oooo
-pppp............p............pp............p............pppp
-qqqq.....xx.....q.....xxi....qq....jxx.....q............qqqq
-rrrr.....uu.....r.....uuu....rr....uuu.....r............rrrr
-ssss............s............ss............s............ssss
-tttt...hhhhhh...t....iiiii...tt...jjjjj....t............tttt
-vvvv............a............aa............a............vvvv
+dddddddddddddddddddddd#d#ndnd#ddndnd.#dddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeee#nenneenn#nenne#eeeeeeeeeeeeeeeeeeeeee
+hhhkvvkvkkkkvkkhh#hhhnnhh#hhhhhnhnhhhhhhhhhhhhhhhhhhhhhhhhhh
+gggkyy###jkkykvggggggggggggggggggggggggggggggggggggggggggggg
+iiiykkkjjjjjjjvii##ii#iif##iiz##i#iizizz##iiiiiiiiiiiiiiiiii
+fffkvykkkykkkvkfffffffffffffffffffffffffffffffffffffffffffff
+oooommmmmmmmmmmmolllllllllllloojjjjjjjjjjjjoppppppppppppoooo
+qqqq............q......l.....qq.....#......q.....#......qqqq
+rrrr............r............rr............r............rrrr
+ssss.....mm.....s.....lll....ss....jjj.....s............ssss
+tttt....##mm....t.....##l....tt....##j.....t............tttt
+uuuu...m....m...u...l.....l..uu...j....j...u............uuuu
 wwww............a............aa............a............wwww
-yyaa............a.....#......aa............a............aayy
+xxxx............a............aa............a............xxxx
+##aa............a.....#......aa............a............aa##
 aaaa............a............aa............a............aaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaazaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaazaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-Colours: .=(41,52,59), a=(45,65,68), b=(34,53,58), c=(35,54,59), d=(38,57,61), e=(39,58,62), f=(36,55,60), g=(37,56,61), h=(64,185,167), i=(101,169,224), j=(220,153,88), k=(244,191,112), l=(40,59,63), m=(223,113,145), n=(41,60,64), o=(42,61,65), p=(43,62,66), q=(44,64,67), r=(45,65,67), s=(45,66,68), t=(46,67,69), u=(213,186,134), v=(47,68,70), w=(48,69,71), x=(238,226,189), y=(49,70,72), z=(255,244,214)
+Colours: .=(41,52,59), a=(45,65,68), b=(34,53,58), c=(35,54,59), d=(36,55,60), e=(37,56,61), f=(41,60,64), g=(39,58,62), h=(38,57,61), i=(40,59,63), j=(220,153,88), k=(137,151,101), l=(101,169,224), m=(64,185,167), n=(244,191,112), o=(42,61,65), p=(223,113,145), q=(43,62,66), r=(44,64,67), s=(45,65,67), t=(45,66,68), u=(46,67,69), v=(114,130,94), w=(47,68,70), x=(48,69,71), y=(152,165,112), z=(255,244,214)
 Text drawn in this frame (x, y = its top-left corner):
   'СМЕНА' at x=217 y=31, size 167x52
   'СМЕНА' at x=216 y=30, size 167x52
-  '1' at x=92 y=148, size 14x30
+  'Медный изгиб' at x=174 y=81, size 173x27
+  'LEFT/RIGHT — карта (ведущий)' at x=174 y=116, size 248x18
+  '1' at x=92 y=177, size 14x30
   'A' at x=90 y=307, size 17x27
-  '2' at x=226 y=148, size 14x30
-  '3' at x=360 y=148, size 14x30
+  '2' at x=226 y=177, size 14x30
+  '3' at x=360 y=177, size 14x30
   'A' at x=358 y=307, size 17x27
-  '4' at x=493 y=148, size 15x30
+  '4' at x=493 y=177, size 15x30
   'ЖДЁМ' at x=472 y=309, size 57x21
   '3 / 4' at x=276 y=375, size 48x27
   'A — готов     B (держать) — выйти' at x=148 y=412, size 304x21

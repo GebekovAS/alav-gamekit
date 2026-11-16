@@ -8,7 +8,8 @@ GOLD=(244,191,112)
 TEAL=(64,185,167)
 COLORS=[TEAL,(101,169,224),(220,153,88),(223,113,145)]
 GATE=g.sprite(['ww...ww...ww','wggggggggggw','ww...ww...ww'],{'w':CREAM,'g':GOLD})
-YARD=g.image('yard-open.png')
+YARDS=[g.image('map-%d.png'%i) for i in range(1,5)]
+MAP_PREVIEWS=g.image('map-previews.png')
 BUILD_STRIP=g.image('build-strip.png')
 TOWERS=g.image('towers.png')
 PLAYERS=g.image('players.png')
@@ -117,6 +118,7 @@ def player(i,x,y,scale=2,badge=True):
 def head(i,x,y):
     g.draw(HEADS,x,y,2.5,src=(i*16,0,16,16))
 
+from maps import MAPS
 from rules import (Match, BUTTONS, PADS, WALL_POS, ENEMIES as ENEMY_DATA, NAMES,
                    TOWERS as TOWER_DATA, enemy_kind, enemy_xy, scaled_wave, enemy_hp, repair_quote,
                    upgrade_options, refund, A, B, UP, DOWN, LEFT, RIGHT, START, SELECT)
@@ -126,10 +128,12 @@ TOWER_NAMES=[NAMES[i:i+4] for i in (0,4,8)]
 # Measurement only: COOP_DEBUG_WAVE=20 [COOP_DEBUG_CASH=5000]
 # [COOP_DEBUG_TOWERS=full]. Normal rooms/readiness remain; the debug core cannot die.
 packs=[]
+active_map=MAPS[0]
 
 
 def road_segment(progress):
-    return sum(progress>p for p in (240,330,450,510))
+    a,b,c,d,_=active_map['ends']
+    return 0 if progress<=a else 1 if progress<=b else 2 if progress<=c else 3 if progress<=d else 4
 
 
 def crowd_groups(enemies):
@@ -182,14 +186,17 @@ known=set()
 suspended=set()
 lost_message=''
 lost_until=0.
-title_solo=False
 muted=False
 last_fx=0
 leaving=False
 role_started=False
 exit_hold=0.
 save_data=g.load()
-records=save_data.setdefault("team_records",{})
+records=save_data.setdefault("map_records",{})
+# Preserve old team records on the original map.
+for key,value in save_data.get('team_records',{}).items():records.setdefault('0:'+key,value)
+selected_map=save_data.get('map',0)
+if type(selected_map) is not int or not 0<=selected_map<len(MAPS):selected_map=0
 recorded=False
 
 
@@ -197,7 +204,7 @@ def begin(role,solo=False):
     global net,match,view,previous,my_id,remote,seen,last_input,known,net_clock,send_clock,suspended
     global snapshot_age,last_snapshot,pending_presses,last_fx,leaving,packs
     net=g.host('coop-defense',max_players=4) if role=='host' else g.join('coop-defense')
-    match=Match(g.hit) if role=='host' else None
+    match=Match(g.hit,selected_map) if role=='host' else None
     my_id='0';view=None;previous=None;remote={};seen={};last_input={};known={'0'}
     net_clock=0.;send_clock=0.;snapshot_age=0.;last_snapshot=clock
     pending_presses=0;last_fx=0;leaving=False;suspended=set()
@@ -226,17 +233,17 @@ def masks():
 
 
 def update(dt):
-    global clock,title_solo,seq,pending_presses,send_clock,net_clock,my_id,view,previous
+    global selected_map,clock,seq,pending_presses,send_clock,net_clock,my_id,view,previous
     global snapshot_age,last_snapshot,last_fx,muted,leaving,exit_hold,role_started,recorded
     clock+=dt
     held,pressed=masks()
     if net is None:
-        if pressed&(UP|DOWN|LEFT|RIGHT):title_solo=not title_solo
         if g.ROLE and not role_started:
             role_started=True
             begin(g.ROLE)
-        elif pressed&A:begin('host',title_solo or bool(held&(UP|DOWN|LEFT|RIGHT)))
-        elif pressed&B:begin('join')
+            return
+        # Network play is started by the ALAV Store (Создать игру / Рядом играют): it sets g.ROLE.
+        if pressed&A:begin('host')
         return
     # recv must also run in rooms, result screens, build/plan menus and while searching.
     messages=net.recv()
@@ -267,9 +274,11 @@ def update(dt):
         for pid,value in remote.items():
             inputs[pid]=value if clock-last_input.get(pid,0)<1 else (0,0)
         if match.phase=='defeat' and pressed&A:
-            match.__init__(g.hit)
+            match.__init__(g.hit,match.map_id)
             for pid in sorted(ids,key=int):match.add_player(pid)
         match.tick(min(dt,.1),inputs)
+        if match.map_id!=selected_map:
+            selected_map=match.map_id;save_data['map']=selected_map;g.save(save_data)
         for pid,value in list(remote.items()):remote[pid]=(value[0],0)
         if net_clock>=.1:
             view=match.snapshot()
@@ -292,7 +301,7 @@ def update(dt):
         if clock-last_snapshot>5:leave('Ведущий отключился');return
     if view:
         if view['s']=='defeat' and not recorded:
-            key=str(view['team'])
+            key='%d:%d'%(view.get('map',0),view['team'])
             records[key]=max(records.get(key,0),view['n'])
             g.save(save_data);recorded=True
         elif view['s']!='defeat':recorded=False
@@ -316,9 +325,8 @@ def draw_title():
     text('МЕДНЫЙ',300,20,CREAM,54,'center');text('ДОЗОР',300,73,GOLD,70,'center')
     g.draw(CORE,244,153,2.3)
     for i,x,y in [(0,105,253),(1,182,277),(2,358,277),(3,435,253)]:player(i,x,y,2.5,False)
-    text('A — одному' if title_solo else 'A — создать',300,358,GOLD,22,'center')
-    text('B — присоединиться',300,387,CREAM,20,'center')
-    text('Крестовина — одиночная смена',300,416,CREAM,16,'center')
+    text('A — начать',300,358,GOLD,24,'center')
+    text('С друзьями: ALAV Store → Рядом играют',300,400,CREAM,16,'center')
     if clock<lost_until:
         g.rect(70,177,460,64,INK);text(lost_message,300,198,GOLD,24,'center')
 
@@ -330,13 +338,17 @@ def seat(pid):
 
 def draw_room():
     g.draw(BACKGROUNDS[1],0,0);text('СМЕНА',300,30,GOLD,46,'center')
+    map_id=view.get('map',0)
+    g.draw(MAP_PREVIEWS,34,73,src=(map_id*120,0,120,82))
+    text(MAPS[map_id]['name'],174,81,GOLD,24)
+    text('LEFT/RIGHT — карта (ведущий)',174,116,CREAM,16)
     ids=list(sorted(view['p'],key=int))
     for slot in range(4):
         x=38+slot*134;i=seat(ids[slot]) if slot<len(ids) else slot
-        g.rect(x,126,122,238,INK);g.rect(x,126,122,5,COLORS[i])
-        text(str(i+1),x+61,148,COLORS[i],26,'center')
+        g.rect(x,168,122,196,INK);g.rect(x,168,122,5,COLORS[i])
+        text(str(i+1),x+61,177,COLORS[i],26,'center')
         if slot<len(ids):
-            player(i,x+25,202,3,False)
+            player(i,x+25,216,3,False)
             if view['p'][ids[slot]][5]:icon(4,x+45,305,2)
             else:text('A',x+61,307,CREAM,24,'center')
         else:text('ЖДЁМ',x+61,309,CREAM,18,'center')
@@ -367,11 +379,14 @@ def tower_at(index,x,y,scale=2):
 
 
 def draw_world():
-    global effect_limit
-    g.draw(YARD,0,32)
+    global effect_limit,active_map
+    m=MAPS[view.get('map',0)]
+    active_map=m
+    pads=m['pads'];walls=m['walls'];map_id=view.get('map',0)
+    g.draw(YARDS[map_id],0,32)
     # Solid cross-road doors and hinges, visibly different from mounting pads.
-    for w,(wx,wy) in enumerate(WALL_POS):
-        vertical=w==1
+    for w,(wx,wy) in enumerate(walls):
+        vertical=m['angles'][road_segment(m['gates'][w])]%180==0
         if view['w'][w]>0:
             g.draw(GATE,wx-24,wy-6,4,angle=90 if vertical else 0)
         else:
@@ -381,8 +396,8 @@ def draw_world():
         if str(w) in view.get('fix',{}):icon(6,wx-8,wy-36)
     for pad,t in enumerate(view['t']):
         if t:
-            x,y=PADS[pad];tower_at(t[0],x-24,y-32)
-    g.draw(CORE if view['h']>0 else BROKEN,484,257,1.65)
+            x,y=pads[pad];tower_at(t[0],x-24,y-32)
+    g.draw(CORE if view['h']>0 else BROKEN,m['core'][0]-40,m['core'][1]-39,1.65)
     health_caps=[enemy_hp(k,view['n']) for k in range(6)]
     live=net.is_host and match is not None
     enemies=match.enemies if live else view['e']
@@ -395,8 +410,8 @@ def draw_world():
         count=len(group);drawn=8 if count>=8 else 5 if count>=5 else 3
         members=group[:drawn]
         progress=sum(interpolate(old_enemies.get(i,small[i])[1],small[i][1]) for i in members)/drawn
-        x,y=enemy_xy(members[0],progress)
-        segment=road_segment(progress);angle=(0,90,180,90,0)[segment]
+        x,y=enemy_xy(members[0],progress,map_id)
+        segment=road_segment(progress);angle=m['angles'][segment]
         # Shared atlas tint follows the representative member; individual rules
         # and all large enemy status silhouettes stay unchanged.
         style=enemy_style(small[members[0]],live,now)
@@ -408,20 +423,20 @@ def draw_world():
         if e[0] in packed:continue
         ident,progress=e[:2];kind=enemy_kind(ident);n=ENEMY_SIZES[kind]
         old=old_enemies.get(ident,e);progress=interpolate(old[1],progress)
-        x,y=enemy_xy(ident,progress);health=e[2] if len(e)>2 else health_caps[kind]
+        x,y=enemy_xy(ident,progress,map_id);health=e[2] if len(e)>2 else health_caps[kind]
         style=enemy_style(e,live,now)
         if style:
             affected_enemy(kind,x-n/2,y-n/2,0 if style==3 else 1 if style==4 else 2)
         else:enemy(kind,x-n/2,y-n/2)
         if kind>=3 and health<health_caps[kind]:hp(kind,x-n/2,y-n/2,health/health_caps[kind])
     for pid,r in view['r'].items():
-        pad,index,cost,expires,sale=r;x,y=PADS[pad];i=seat(pid)
+        pad,index,cost,expires,sale=r;x,y=pads[pad];i=seat(pid)
         if not sale:g.draw(GHOST,x-24,y-36,2,src=(index*24,0,24,24))
         icon(1 if sale else 9,x-8,y-55)
         text(str(i+1),x+23,y-35,COLORS[i],16,'center')
         g.rect(x-22,y+16,44,4,INK);g.rect(x-22,y+16,44*max(0,min(1,(expires-view['now'])/15)),3,COLORS[i])
     for pid,m in view['m'].items():
-        target,expires=m;coords=PADS+WALL_POS
+        target,expires=m;coords=pads+walls
         if 0<=target<len(coords):
             x,y=coords[target];g.draw(PIN,x-12,y-64,src=(seat(pid)*24,0,24,28));text(str(seat(pid)+1),x,y-63,INK,16,'center')
     for pid,p in view['p'].items():
@@ -435,7 +450,7 @@ def draw_world():
         target=local[4]
         if not local[2] and not local[6]:
             if 0<=target<8:
-                x,y=PADS[target];g.rect(x-24,y-21,48,42,GOLD,fill=False)
+                x,y=pads[target];g.rect(x-24,y-21,48,42,GOLD,fill=False)
                 icon(3,local[0]+22,local[1]-30,1.25)
             elif 8<=target<10 and view['w'][target-8]<150:
                 hp_now=view['w'][target-8]
@@ -552,7 +567,7 @@ def draw_result():
     seconds,kills,spent=view['stats']
     g.rect(60,348,480,56,INK)
     text('Волна %d    %02d:%02d'%(view['n'],seconds//60,seconds%60),300,350,GOLD,24,'center')
-    text('Рекорд команды (%d): %d'%(view['team'],records.get(str(view['team']),view['n'])),300,380,CREAM,18,'center')
+    text('Рекорд команды (%d): %d'%(view['team'],records.get('%d:%d'%(view.get('map',0),view['team']),view['n'])),300,380,CREAM,18,'center')
     text('A — новая смена (ведущий)' if not net.is_host else 'A — новая смена',300,413,CREAM,18,'center')
 
 

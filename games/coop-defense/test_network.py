@@ -12,6 +12,7 @@ class Transport:
 class Kit:
     ROLE=None
     def __init__(self):self.keys=set();self.edges=set();self.created=[];self.saved={};self.saves=0
+    def find(self,name):return []
     def load(self):return self.saved
     def save(self,data):self.saved=data.copy();self.saves+=1
     def sprite(self,*args):return None
@@ -31,8 +32,9 @@ class Kit:
     def quit(self):raise AssertionError('unexpected quit')
 
 
-def load():
+def load(saved=None):
     kit=Kit()
+    if saved is not None:kit.saved=saved
     tree=ast.parse(Path(__file__).with_name('main.py').read_text(encoding='utf-8'))
     tree.body=[n for n in tree.body if not (isinstance(n,ast.Import) and any(v.name=='alav' for v in n.names))
                and not (isinstance(n,ast.Expr) and isinstance(n.value,ast.Call) and isinstance(n.value.func,ast.Attribute) and n.value.func.attr=='run')]
@@ -98,14 +100,14 @@ assert h['match'].players['1']['ready']
 # Each console persists the result once; a weaker result preserves the record.
 h['match'].phase='defeat';h['match'].wave=23;h['match'].wave_players=2
 h['update'](.1)
-assert hk.saved['team_records']['2']==23 and hk.saves==1
+assert hk.saved['map_records']['0:2']==23 and hk.saves==1
 packet=h['match'].snapshot();packet['you']='1'
 client.inbox=[(0,packet)];c['update'](.1)
-assert ck.saved['team_records']['2']==23 and ck.saves==1
+assert ck.saved['map_records']['0:2']==23 and ck.saves==1
 c['update'](.1);assert ck.saves==1
 packet=dict(packet,s='break');client.inbox=[(0,packet)];c['update'](.1)
 packet=dict(packet,s='defeat',n=18);client.inbox=[(0,packet)];c['update'](.1)
-assert ck.saved['team_records']['2']==23 and ck.saves==2
+assert ck.saved['map_records']['0:2']==23 and ck.saves==2
 # A lost host returns to title, even when the game had an ALAV lobby role.
 ck.ROLE='join';c['role_started']=True
 for _ in range(51):c['update'](.1)
@@ -113,3 +115,36 @@ assert c['net'] is None and c['lost_message']=='Ведущий отключил�
 c['update'](.1);assert c['net'] is None
 assert host.polls>15 and client.polls>50
 print('PASS real update: input sequences, 20Hz send, snapshots, stale input, drop, reconnect, deferred join, host loss, SELECT+START, per-console records')
+
+# Host choice travels through actual update/snapshot reception; clients cannot choose.
+h,hk=load();h['begin']('host');h['net'].peers={1:{}}
+hk.edges={'RIGHT'};h['update'](.1);hk.edges=set()
+assert h['match'].map_id==1 and hk.saved['map']==1
+c,ck=load();c['begin']('join')
+packet=h['match'].snapshot();packet['you']='1';c['net'].inbox=[(0,packet)]
+c['update'](.1);assert c['view']['map']==1
+h['net'].inbox=[(1,[1,0,8])];h['update'](.1)
+assert h['match'].map_id==1
+# Reload saved data through the same initialization as a new process.
+h,hk=load({'map':2,'team_records':{'2':25}})
+assert h['records']['0:2']==25
+h['begin']('host',True)
+assert h['match'].map_id==2 and h['match'].phase=='prep'
+h['match'].phase='defeat';h['match'].wave=19;h['match'].wave_players=2
+h['update'](.1)
+assert hk.saved['map_records']['2:2']==19
+assert hk.saved['map_records']['0:2']==25
+h['recorded']=False;h['match'].wave_players=4;h['update'](.1)
+assert hk.saved['map_records']['2:2']==19 and hk.saved['map_records']['2:4']==19
+print('PASS host map picker/live join snapshot/solo selection/per-map records')
+
+# Existing title discovery behavior: a discovered host makes A join it.
+h,hk=load();hk.find=lambda name:['127.0.0.1'];hk.edges={'A'}
+h['update'](.1)
+assert h['net'] is not None and not h['net'].is_host
+print('PASS title discovery still joins existing host')
+
+for saved in ({},{'map':-1},{'map':4},{'map':'2'},{'map':True}):
+    ns,kit=load(saved);ns['begin']('host',True)
+    assert ns['match'].map_id==0
+print('PASS saved-map reload/default/validation and legacy record migration')

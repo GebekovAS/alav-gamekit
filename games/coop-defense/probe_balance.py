@@ -6,8 +6,8 @@ from rules import *
 import time
 
 
-def probe(n):
-    m=Match()
+def probe(n,map_id=0):
+    m=Match(map_id=map_id)
     for pid in range(n):m.add_player(str(pid))
     m.start()
     # Build the lane first, then add armor counters and complementary control.
@@ -19,7 +19,7 @@ def probe(n):
         if order<len(orders):
             pad,index=orders[order]
             if free_cash(m.bank)>=TOWERS[index][0]:
-                p=m.players['0'];p['x'],p['y']=PADS[pad][0]-36,PADS[pad][1];p['target']=pad
+                p=m.players['0'];p['x'],p['y']=m.map['pads'][pad][0]-36,m.map['pads'][pad][1];p['target']=pad
                 m.buy('0',index)
                 if m.towers[pad] and m.towers[pad][0]==index:order+=1
         # Ready the untimed first preparation; later breaks expire without early bonuses.
@@ -35,13 +35,13 @@ def probe(n):
     assert maximum<=64
     return m.phase
 
-def maxed(n,build):
+def maxed(n,build,map_id=0):
     """Upper-bound fixture: all eight final towers before wave 1, no free repair.
 
     Uses actual combat, walls, core and spawn limits; no worker teleport repairs.
     Starting fully built deliberately removes the economy bottleneck.
     """
-    m=Match()
+    m=Match(map_id=map_id)
     for pid in range(n):m.add_player(str(pid))
     m.start()
     m.towers=[[index,sum(TOWERS[k][0] for k in (index//4*4,index//4*4+1,index)),0.] for index in build]
@@ -55,11 +55,14 @@ def maxed(n,build):
 
 
 if __name__=='__main__':
-    for n in (1,2,4):probe(n)
+    import sys
+    map_id=int(sys.argv[1]) if len(sys.argv)>1 else 0
+    print(MAPS[map_id]['name'],MAPS[map_id]['length'])
+    for n in (1,2,4):probe(n,map_id)
     # Plausible mixes: AoE at the bend, ice control, armor-piercing and core cover.
     builds=[(2,3,7,3,7,7,10,11),(3,3,7,7,10,7,7,11),
             (7,3,7,7,10,7,10,11),(7,3,7,7,11,7,10,11)]
     for n in (1,2,4):
-        results=[maxed(n,build) for build in builds]
+        results=[maxed(n,build,map_id) for build in builds]
         best=max(range(len(results)),key=results.__getitem__)
         print('MAXED %dp: defeat wave=%d build=%s candidates=%s'%(n,results[best],builds[best],results))

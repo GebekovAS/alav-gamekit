@@ -202,7 +202,7 @@ def endless_and_ready():
     p['x'],p['y']=284,170;p['target']=8
     m.tick(2,{'0':(B,A)})
     assert not m.repairs and m.bank['cash']==240 and not p['ready']
-    assert p['msg']=='держи B — ремонт'
+    assert 8 not in m.targets(p) and not p['msg']
     m.walls[0]=149;m.tick(.1,{'0':(B,0)})
     assert m.repairs
     m.tick(1,{'0':(B,0)});m.tick(.1,{'0':(B,0)})
@@ -218,7 +218,51 @@ def endless_and_ready():
 
 
 
-for name,fn in [('endless formulas/ready/full walls',endless_and_ready),('atomic economy',economy),('reservation replacement/expiry/drop',replacement),
+def map_geometry():
+    from maps import MAPS,lane
+    import itertools
+    for ident,m in enumerate(MAPS):
+        assert len(m['pads'])==8 and len(m['walls'])==2 and len(m['spawns'])==4
+        roads=[]
+        for a,b in zip(m['route'],m['route'][1:]):
+            assert (a[0]==b[0]) != (a[1]==b[1])
+            roads.append((min(a[0],b[0])-25,min(a[1],b[1])-25,abs(a[0]-b[0])+50,abs(a[1]-b[1])+50))
+        objects=[]
+        for coords,w,h in ((m['pads'],48,36),(m['spawns'],18,20)):
+            for x,y in coords:
+                box=(x-w/2,y-h/2,w,h)
+                assert not any(rect_hit(box,r) for r in roads),(ident,(x,y),'road')
+                assert 0<=box[0] and box[0]+w<=600 and 32<=box[1] and box[1]+h<=440
+                objects.append(box)
+        cx,cy=m['core'];objects.append((cx-15,cy-15,30,30))
+        for gate,(x,y) in zip(m['gates'],m['walls']):
+            assert 0<gate<m['length']
+            assert lane(gate,map_id=ident)==(x,y)
+            segment=next(s for s,end in zip(m['segments'],m['ends']) if gate<=end)
+            w,h=(12,48) if segment[2] else (48,12)
+            objects.append((x-w/2,y-h/2,w,h))
+        assert not any(rect_hit(a,b) for a,b in itertools.combinations(objects,2)),ident
+        assert all(lane(end,map_id=ident)==point for end,point in zip(m['ends'],m['route'][1:]))
+        assert all(42<=x<=568 and 67<=y<=387 for x,y in m['spawns'])
+        for end in m['ends'][:-1]:
+            assert math.dist(lane(end-.001,map_id=ident),lane(end+.001,map_id=ident))<.003
+        assert lane(m['length'],map_id=ident)==m['core']
+        match=Match(map_id=ident)
+        for i in range(4):match.add_player(str(i))
+        snap=json.loads(json.dumps(match.snapshot()))
+        assert snap['map']==ident and len({tuple(p[:2]) for p in snap['p'].values()})==4
+        p=match.players['0'];p['x'],p['y']=m['walls'][0]
+        assert 8 not in match.targets(p)
+        match.walls[0]=149
+        assert 8 in match.targets(p)
+    match=Match();match.add_player('0');match.add_player('1')
+    match.tick(.01,{'1':(0,RIGHT)})
+    assert match.map_id==0
+    match.tick(.01,{'0':(0,LEFT)})
+    assert match.map_id==3 and all(not p['ready'] for p in match.players.values())
+
+
+for name,fn in [('all map geometry/snapshot/host picker/full wall targets',map_geometry),('endless formulas/ready/full walls',endless_and_ready),('atomic economy',economy),('reservation replacement/expiry/drop',replacement),
                 ('all 10 waves x 1/2/3/4 players',scales),('damage/armor/freeze/repair costs',combat),
                 ('wall queue and single attacker',queues),('build/branch/reserve/sale menus',menus),
                 ('exclusive repair/rebuild/markers',repair_and_markers),('endless phases/defeat/carrier',waves_and_outcomes),
