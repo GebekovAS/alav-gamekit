@@ -327,6 +327,14 @@ def interpolate(a,b):
     return a+(b-a)*weight
 
 
+def advance(a,b):
+    """Enemy progress on a joiner: smooth between snapshots and keep walking through Wi-Fi hiccups."""
+    if net.is_host or previous is None:return b
+    if snapshot_age<.1:return a+(b-a)*snapshot_age/.1
+    # Consoles on Wi-Fi lose a packet now and then and TCP holds the stream ~1 s: keep enemies moving.
+    return b+max(0,b-a)*min(snapshot_age-.1,1.4)/.1
+
+
 def draw_title():
     g.draw(BACKGROUNDS[0],0,0)
     text('МЕДНЫЙ',300,20,CREAM,54,'center');text('ДОЗОР',300,73,GOLD,70,'center')
@@ -434,7 +442,7 @@ def draw_world():
         # A dying member only changes the count, never the surviving membership.
         count=len(group);drawn=8 if count>=8 else 5 if count>=5 else 3
         members=group[:drawn]
-        progress=sum(interpolate(old_enemies.get(i,small[i])[1],small[i][1]) for i in members)/drawn
+        progress=sum(advance(old_enemies.get(i,small[i])[1],small[i][1]) for i in members)/drawn
         x,y=enemy_xy(members[0],progress,map_id)
         segment=road_segment(progress);angle=m['angles'][segment]
         # Shared atlas tint follows the representative member; individual rules
@@ -447,7 +455,7 @@ def draw_world():
     for e in enemies:
         if e[0] in packed:continue
         ident,progress=e[:2];kind=enemy_kind(ident);n=ENEMY_SIZES[kind]
-        old=old_enemies.get(ident,e);progress=interpolate(old[1],progress)
+        old=old_enemies.get(ident,e);progress=advance(old[1],progress)
         x,y=enemy_xy(ident,progress,map_id);health=e[2] if len(e)>2 else health_caps[kind]
         style=enemy_style(e,live,now)
         if kind>=3 and health<health_caps[kind]:
@@ -639,7 +647,7 @@ def draw():
         elif not p[2]:
             if view['s']=='prep':
                 text('A — строить у площадки, START — готов',300,414,CREAM,16,'center')
-    if not net.is_host and snapshot_age>1:
+    if not net.is_host and snapshot_age>1.5:
         g.rect(155,188,290,50,INK);text('Нет связи с ведущим',300,203,GOLD,22,'center')
     if view.get('wait'):
         g.rect(80,170,440,80,INK);text('Вход после волны',300,190,GOLD,26,'center')
