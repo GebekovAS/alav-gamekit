@@ -15,6 +15,10 @@ import json
 import math
 import os
 import random
+import re
+import errno
+import ssl
+import threading
 import select
 import socket
 import sys
@@ -32,8 +36,10 @@ def _ipv4(s):
     return len(parts) == 4 and all(p.isascii() and p.isdigit() and len(p) <= 3 and int(p) < 256 for p in parts)
 
 
-# ALAV_JOIN=<host ip>: the store lobby started this game to join that match (anything but an IPv4 is ignored)
-_JOIN = os.environ.get("ALAV_JOIN") if _ipv4(os.environ.get("ALAV_JOIN", "")) else None
+_ROOM_ID = re.compile(r"[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}")
+_JOIN_ENV = os.environ.get("ALAV_JOIN", "")
+_JOIN = _JOIN_ENV if (_ipv4(_JOIN_ENV) or _JOIN_ENV.startswith("relay:")) else None
+NET = "internet" if os.environ.get("ALAV_NET") == "internet" or (_JOIN or "").startswith("relay:") else "lan"
 ROLE = os.environ.get("ALAV_ROLE") or ("join" if _JOIN else next((a for a in sys.argv[1:] if a in ("host", "join")), None))
 
 WHITE, BLACK, GRAY = (255, 255, 255), (0, 0, 0), (128, 128, 128)
@@ -436,11 +442,153 @@ def _lobby_reply(slug, title, players, max_players=None):
         title = title[:-1]
 
 
+# DNS has no non-blocking standard-library API. Only resolution uses a daemon
+# worker; all socket I/O, TLS and protocol state stay on the game thread.
+_relay_dns = {}
+_relay_tls = None
+
+
+def _relay_address():
+    value = os.environ.get("ALAV_RELAY", "https://alav.online/play-relay")
+    tls = value.startswith("https://")
+    if tls:
+        if not value.endswith("/play-relay"):
+            raise ValueError("invalid relay path")
+        value = value[8:-11]
+        if ":" not in value:
+            value += ":443"
+    if not re.fullmatch(r"[a-zA-Z0-9.-]{1,253}:[0-9]{1,5}", value):
+        raise ValueError("invalid relay address")
+    host, port = value.rsplit(":", 1)
+    if not all(re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", part) for part in host.split(".")):
+        raise ValueError("invalid relay hostname")
+    if not 1 <= int(port) <= 65535:
+        raise ValueError("invalid relay port")
+    return host, int(port), tls
+
+
+def _resolve_relay(key, result):
+    try:
+        result.append(socket.getaddrinfo(*key, type=socket.SOCK_STREAM)[0])
+    except OSError:
+        result.append(None)
+
+
+class _RelayLink:
+    """One bounded, non-blocking TCP/TLS/Upgrade/relay handshake."""
+    def __init__(self, address, keyword, body):
+        global _relay_tls
+        self.address = address
+        self.request = (keyword + " " + json.dumps(body, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+        if len(self.request) > 512:
+            raise ValueError("oversize relay request")
+        self.sock = None
+        self.stage = "dns"
+        self.rx = self.tx = b""
+        self.deadline = time.monotonic() + 8
+        key = address[:2]
+        if key not in _relay_dns:
+            result = _relay_dns[key] = []
+            try:
+                socket.inet_pton(socket.AF_INET, key[0])
+                result.append((socket.AF_INET, socket.SOCK_STREAM, 0, "", key))
+            except OSError:
+                threading.Thread(target=_resolve_relay, args=(key, result), daemon=True).start()
+        self.resolved = _relay_dns[key]
+        if address[2] and _relay_tls is None:
+            _relay_tls = ssl.create_default_context()
+
+    def close(self):
+        if self.sock:
+            self.sock.close()
+        self.stage = "closed"
+
+    def _request(self):
+        self.stage, self.tx = "reply", self.request
+
+    def poll(self):
+        if self.stage not in ("control", "ready") and time.monotonic() > self.deadline:
+            raise OSError("relay handshake timeout")
+        if self.stage == "dns":
+            if not self.resolved:
+                return []
+            if self.resolved[0] is None:
+                raise OSError("relay DNS failed")
+            family, kind, proto, _, addr = self.resolved[0]
+            self.sock = socket.socket(family, kind, proto)
+            self.sock.setblocking(False)
+            error = self.sock.connect_ex(addr)
+            if error not in (0, errno.EINPROGRESS, errno.EWOULDBLOCK, errno.EALREADY, 10035):
+                raise OSError(error, "relay connect")
+            self.stage = "connect"
+            self.connect_deadline = time.monotonic() + .3
+        if self.stage == "connect":
+            if time.monotonic() > self.connect_deadline:
+                raise OSError("relay connect timeout")
+            _, writable, errors = select.select([], [self.sock], [self.sock], 0)
+            if not writable and not errors:
+                return []
+            if self.sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR):
+                raise OSError("relay connect failed")
+            if self.address[2]:
+                self.sock = _relay_tls.wrap_socket(self.sock, server_hostname=self.address[0], do_handshake_on_connect=False)
+                self.stage = "tls"
+            else:
+                self._request()
+        try:
+            if self.stage == "tls":
+                self.sock.do_handshake()
+                host, port, _ = self.address
+                authority = host if port == 443 else "%s:%d" % (host, port)
+                self.tx = ("GET /play-relay HTTP/1.1\r\nHost: " + authority +
+                           "\r\nUpgrade: alav-relay\r\nConnection: Upgrade\r\n\r\n").encode("ascii")
+                self.stage = "upgrade"
+            if self.tx:
+                count = self.sock.send(self.tx)
+                self.tx = self.tx[count:]
+                if self.tx:
+                    return []
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise OSError("relay closed")
+            self.rx += chunk
+        except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            return []
+        if self.stage == "upgrade":
+            if b"\r\n\r\n" not in self.rx:
+                if len(self.rx) > 4096:
+                    raise ValueError("oversize upgrade")
+                return []
+            header, self.rx = self.rx.split(b"\r\n\r\n", 1)
+            rows = header.lower().split(b"\r\n")
+            if (len(header) > 4096 or rows[0].split()[:2] != [b"http/1.1", b"101"] or
+                    b"upgrade: alav-relay" not in rows or b"connection: upgrade" not in rows):
+                raise ValueError("invalid upgrade")
+            self._request()
+            return []
+        lines = []
+        while b"\n" in self.rx:
+            line, self.rx = self.rx.split(b"\n", 1)
+            if len(line) > 511:
+                raise ValueError("oversize relay line")
+            keyword, _, payload = line.decode("utf-8").partition(" ")
+            body = json.loads(payload) if payload else {}
+            if not isinstance(body, dict):
+                raise ValueError("invalid relay body")
+            lines.append((keyword, body))
+            # OK switches framing to the game's JSON stream. Preserve all bytes.
+            if keyword == "OK":
+                break
+        if len(self.rx) > (262144 if lines and lines[-1][0] == "OK" else 511):
+            raise ValueError("oversize relay buffer")
+        return lines
+
+
 class Net:
-    """LAN link between consoles. Make one with host() or join(); see AGENTS.md "Network games"."""
+    """LAN or internet link between consoles. Make one with host() or join(); see AGENTS.md "Network games"."""
 
     def __init__(self, name, is_host, ip=None, max_players=None):
-        global _hosting
+        global _hosting, NET
         if not name or name.startswith("*"):  # b"ALAV?*" is the store lobby probe
             raise ValueError("network game name must not be empty or start with '*'")
         if max_players is not None and not (type(max_players) is int and 2 <= max_players <= 99):
@@ -448,6 +596,14 @@ class Net:
         self.name, self.is_host, self.ip, self.max = name.encode(), is_host, ip, max_players
         self.peers = {}  # id -> [socket, unparsed bytes]; a client sees the host as id 0
         self._next_id, self._retry = 1, 0.0
+        self._relay = None
+        self._pending = []
+        self._session = None
+        self._closed = False
+        target = ip or os.environ.get("ALAV_JOIN", "")
+        self._internet = (os.environ.get("ALAV_NET") == "internet" if is_host else target.startswith("relay:"))
+        self._relay_id = target[6:] if not is_host and self._internet else None
+        self._address = None
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         if is_host:
@@ -463,6 +619,20 @@ class Net:
             except (OSError, ValueError, KeyError, TypeError):
                 pass
             _hosting = self
+        if self._internet:
+            try:
+                self._address = _relay_address()
+                if is_host:
+                    body = dict(slug=self.slug, name=self.title[:40], max=max_players or 8)
+                    room = os.environ.get("ALAV_ROOM", "")
+                    if _ROOM_ID.fullmatch(room):
+                        body["id"] = room
+                    if os.environ.get("ALAV_PRIVATE") == "1":
+                        body["private"] = True
+                    self._relay = _RelayLink(self._address, "HOST", body)
+            except (OSError, ValueError):
+                self._relay_failed()
+        NET = "internet" if self._internet else "lan"
 
     @property
     def connected(self):
@@ -472,14 +642,105 @@ class Net:
     def _add(self, sock, pid):
         global _net_peak
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        sock.settimeout(0.2)
-        self.peers[pid] = [sock, b""]
+        sock.setblocking(False)
+        self.peers[pid] = [sock, b"", b""]
         _net_peak = max(_net_peak, len(self.peers))
 
     def _readable(self, sock):
         return bool(select.select([sock], [], [], 0)[0])
 
+    def _drop(self, pid):
+        peer = self.peers.pop(pid, None)
+        if peer:
+            peer[0].close()
+
+    def close(self):
+        global _hosting
+        if self._closed:
+            return
+        self._closed = True
+        for pid in list(self.peers):
+            self._drop(pid)
+        if self._relay:
+            self._relay.close()
+        for link in self._pending:
+            link.close()
+        self._pending.clear()
+        self.udp.close()
+        if self.is_host:
+            self.srv.close()
+        if _hosting is self:
+            _hosting = None
+
+    def _relay_failed(self):
+        global NET
+        if self._relay:
+            self._relay.close()
+            self._relay = None
+        if self.is_host:
+            for link in self._pending:
+                link.close()
+            self._pending.clear()
+            self._internet = False
+            NET = "lan"
+            print("ALAV: relay unavailable; LAN hosting continues", file=sys.stderr)
+
+    def _relay_find(self):
+        if not self._internet:
+            return
+        if not self.is_host and not self.peers and not self._relay and time.monotonic() >= self._retry:
+            self._retry = time.monotonic() + 3
+            if self._address and _ROOM_ID.fullmatch(self._relay_id or ""):
+                self._relay = _RelayLink(self._address, "JOIN", {"id": self._relay_id})
+        link = self._relay
+        if link:
+            try:
+                for keyword, body in link.poll():
+                    if self.is_host and keyword == "SESSION" and not self._session:
+                        sid = body.get("id")
+                        if not isinstance(sid, str) or not _ROOM_ID.fullmatch(sid):
+                            raise ValueError("invalid session")
+                        self._session, link.stage = sid, "control"
+                    elif self.is_host and self._session and keyword == "PING" and not body:
+                        link.tx += b"PONG\n"
+                    elif self.is_host and self._session and keyword == "CONN":
+                        pair = body.get("pair")
+                        if not isinstance(pair, str) or not re.fullmatch(r"[a-f0-9]{32}", pair):
+                            raise ValueError("invalid pair")
+                        # LAN players share the same capacity; leave an excess relay
+                        # guest unpaired rather than disconnecting the entire room.
+                        if len(self._pending) + len(self.peers) >= (self.max or 8) - 1:
+                            continue
+                        if any(item.pair == pair for item in self._pending):
+                            raise ValueError("duplicate pair")
+                        data = _RelayLink(self._address, "DATA", dict(id=self._session, pair=pair))
+                        data.pair = pair
+                        self._pending.append(data)
+                    elif not self.is_host and keyword == "OK" and not body:
+                        self._add(link.sock, 0)
+                        self.peers[0][1] = link.rx
+                        self._relay = None
+                    else:
+                        raise ValueError("relay refused or invalid response")
+            except (OSError, ValueError, RecursionError):
+                self._relay_failed()
+        for data in self._pending[:]:
+            try:
+                for keyword, body in data.poll():
+                    if keyword != "OK" or body:
+                        raise ValueError("invalid data response")
+                    self._add(data.sock, self._next_id)
+                    self.peers[self._next_id][1] = data.rx
+                    self._next_id += 1
+                    self._pending.remove(data)
+            except (OSError, ValueError, RecursionError):
+                data.close()
+                self._pending.remove(data)
+
     def _find(self):
+        if self._closed:
+            return
+        self._relay_find()
         if self.is_host:
             while self._readable(self.srv):
                 sock = self.srv.accept()[0]
@@ -499,7 +760,7 @@ class Net:
                         self.udp.sendto(b"ALAV!" + self.name, addr)
                 except OSError:
                     pass
-        elif not self.peers and time.monotonic() >= self._retry:
+        elif not self._internet and not self.peers and time.monotonic() >= self._retry:
             self._retry = time.monotonic() + 0.5
             try:
                 if self.ip:
@@ -533,31 +794,57 @@ class Net:
         out = []
         for pid, peer in list(self.peers.items()):
             try:
-                while self._readable(peer[0]):
+                self._flush(peer)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                pass
+            except (OSError, ValueError):
+                self._drop(pid)
+                continue
+            try:
+                # Bound work per peer per frame, including malicious streams.
+                for _ in range(4):
+                    if not self._readable(peer[0]) and not getattr(peer[0], "pending", lambda: 0)():
+                        break
                     data = peer[0].recv(65536)
                     if not data:
                         raise OSError("closed")
                     peer[1] += data
-            except OSError:
-                self.peers.pop(pid, None)
+                    if len(peer[1]) > 262144:
+                        raise ValueError("oversize game buffer")
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                pass
+            except (OSError, ValueError):
+                self._drop(pid)
                 continue
             *lines, peer[1] = peer[1].split(b"\n")
             for ln in lines:
                 try:
                     out.append((pid, json.loads(ln)))
-                except ValueError:
+                except (ValueError, RecursionError):
                     pass
         return out
 
+    def _flush(self, peer):
+        if len(peer[2]) > 262144:
+            raise ValueError("slow peer")
+        if peer[2]:
+            count = peer[0].send(peer[2])
+            peer[2] = peer[2][count:]
+
     def send(self, message, to=None):
-        """Send a dict/list/number/string to every linked player, or only to player id `to`."""
+        """Queue JSON for every linked player, or only player id `to`."""
         data = json.dumps(message, separators=(",", ":")).encode() + b"\n"
         for pid, peer in list(self.peers.items()):
             if to is None or to == pid:
+                peer[2] += data
                 try:
-                    peer[0].sendall(data)
-                except OSError:
-                    self.peers.pop(pid, None)
+                    if len(peer[2]) > 262144:
+                        raise ValueError("slow peer")
+                    self._flush(peer)
+                except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                    pass
+                except (OSError, ValueError):
+                    self._drop(pid)
 
 
 def host(name, max_players=None):
@@ -571,7 +858,7 @@ def host(name, max_players=None):
 def join(name, ip=None):
     """Find a host of the game `name` on the local network (or connect straight to ip).
 
-    Started by the store lobby (env ALAV_JOIN=<host ip>, then ROLE is "join"): connects to that host.
+    The store passes ALAV_JOIN=<host ip> or relay:<session id> and ROLE is "join".
     """
     return Net(name, False, ip or _JOIN)
 

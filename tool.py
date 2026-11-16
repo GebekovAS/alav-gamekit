@@ -24,7 +24,7 @@ deploy needs developer mode: ALAV Store -> Settings on the console, then on the 
 ALAV_HOST to the address shown there. The first time the console asks to trust this PC.
 publish needs a developer key: register at https://alav.online/developers, create a key there and
 set ALAV_KEY to it. The game needs icon.png (PNG, at most 128x128 px and 64 KiB). Optional fields in
-game.json: "description", "genre", "kind" ("game" or "app"), "net" (true for network games).
+game.json: "description", "genre", "kind" ("game" or "app"), "net" (true for network games), "internet" (true to offer relay rooms).
 <slug> is a folder name in games/ or examples/. After `setup`, games/, out/ and dist/ live in the
 workspace folder, not inside the kit. Keys on a PC: arrows, X=A, Z=B, S=X, A=Y,
 Q/W=L1/R1, Enter=START, Backspace=SELECT, Esc=quit.
@@ -101,6 +101,10 @@ def meta(path):
         sys.exit("bad game.json in %s: %s" % (path, e))
     if not str(data.get("title", "")).strip() or not re.fullmatch(r"\d+\.\d+\.\d+", str(data.get("version", ""))):
         sys.exit('game.json needs "title" and "version" like "1.0.0"')
+    if "internet" in data and type(data["internet"]) is not bool:
+        sys.exit('game.json: "internet" must be true or false')
+    if data.get("internet") and data.get("net") is not True:
+        sys.exit('game.json: "internet": true requires "net": true')
     return data
 
 
@@ -159,6 +163,8 @@ def cmd_new(args):
     info = {"title": title, "version": "1.0.0"}
     if meta(src).get("net") is True:
         info["net"] = True
+    if meta(src).get("internet") is True:
+        info["internet"] = True
     with open(os.path.join(dst, "game.json"), "w", encoding="utf-8") as f:
         json.dump(info, f, ensure_ascii=False, indent=2)
     print("created %s\n"

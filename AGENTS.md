@@ -153,6 +153,12 @@ Copy the `netduel` example. The pattern, which works for any game:
   in its lobby; pressing A starts the game with `g.ROLE == "host"`. `check` requires this metadata
   when the source calls `g.host()` or `g.join()`, and tests network games even without `--net`.
 
+- Add `"internet": true` alongside `"net": true` in game.json to offer internet rooms in
+  the ALAV Store. No game code changes are needed: the store selects the relay automatically.
+  Read-only `g.NET` is `"internet"` or `"lan"` (including host fallback when the relay is unavailable).
+  Expect 100–200 ms latency; keep snapshots small, send them at about 10 Hz and interpolate
+  between received snapshots. Call `recv()` every frame, also while waiting or paused.
+
 - One console is the **host**: it runs all the game rules and sends the whole state to the others.
 - The others **join**: each sends only its buttons and draws the state it receives.
 
