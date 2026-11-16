@@ -1,0 +1,32 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+mmmmmmmmmmmmmmm#mzqm#mqmqqqm#mmkqmmmmm#qmqmmmmmmmmmmmmmmmmmm
+ooooooooooooooo#oz#qqoqo#oo#qooqqqqooo#qoqoqqooooooooooooooo
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+ggggggggggggggggggggggggggkrkrrkukgggggggggggggggggggggggggg
+iiiiiiiiiiiiiiiiiiiiiiiiikurrkxrrkkiiiikiiiiiiiiiiiiiiiiiiii
+hhhhhhhhhhhhhhhhhhhhhhhhhrurkkxrrkrhhhhhhhhhhhhhhhhhhhhhhhhh
+jjjjjjjjjjjjjjjjjjjjjjjjjkvrkrrkuvkkjjjjjjjjjjjjjjjjjjjjjjjj
+nnnnnnnnnnnnnnnrknrnnnnnkkknkkkkkkkknnnnrknknnnnnnnnnnnnnnnn
+llllllllllllllllllllllllssssssssssssslllllllllllllllllllllll
+ppppppppppppp.....x..................kk........ppppppppppppp
+ttttttt.....................kkk#......................tttttt
+ww..........................uuuu..........................ww
+............................................................
+...................#..#..........v.y#y.y....................
+............................................................
+......................kv....#...............................
+.kkkkk................v...............................kkkkk.
+Colours: .=(60,39,42), a=(50,30,36), b=(51,31,36), c=(55,33,38), d=(56,34,38), e=(57,35,38), f=(58,36,39), g=(60,36,39), h=(62,38,40), i=(61,37,40), j=(63,39,41), k=(41,52,59), l=(66,41,42), m=(52,32,37), n=(64,40,41), o=(54,32,37), p=(67,41,42), q=(246,180,183), r=(129,83,66), s=(56,44,48), t=(68,42,43), u=(220,153,88), v=(238,226,189), w=(69,43,43), x=(185,78,60), y=(255,244,214), z=(101,90,95)
+Text drawn in this frame (x, y = its top-left corner):
+  'ПОРАЖЕНИЕ' at x=145 y=31, size 311x54
+  'ПОРАЖЕНИЕ' at x=144 y=30, size 311x54
+  '7/10' at x=215 y=361, size 46x27
+  '08:42' at x=353 y=361, size 60x27
+  'ЕЩЁ СМЕНУ?' at x=250 y=407, size 121x21
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

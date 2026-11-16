@@ -1,0 +1,40 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+gg#qqq#qg#gggggggggggggggggggggggggggggggggggggggggggggggggg
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+iiimmiiiiiiiiiiiiiiiii#mmiiiiiiiiiiiiiiiiiqqv#ii#iiiiiiiiiii
+rraaaaaaaaaaaaaammarraaaaaaaaaaaaaaamaarraaaaaaaaa#aaawzmarr
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+jjjjz#jjjjjjjjjjjjjjjjjoojjjjjjjq#jjjjjjjjjomjjjjjjoqjjjjjjj
+ssa##mqaaa######omassamvvaaaaaaa##aaoaassavovaaaaaaa#aa##ass
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+hhhhhhhhh#xx#hhhhhhhhhhhhhhhhh#hhhhhhhhhhhhhhhh#xh#hxhhhhhhh
+kkkkkko#kk##kkkkkkkkkkk#mkkkkkkkkkkuuukkkkkmkkkkkkkkkkkkkkkk
+llllollloomllollllllll#omlllllllluu##uulllmwm######lllllllll
+ttaaaaqaaaa#o#aaaaattaaaaaaaaaaaaaa####ttaaaaaaaaaaaaaammatt
+nnnnnnnnnnnnn..............#...................nnnnn#nnnnnnn
+ppppppp...............................................pppppp
+##.mww#....................mzw..#.........z.m.............##
+..ayyaaaaa#######ma..aaaa#aayyaa##aaaaa..aayaaaaaaaaaaa##a..
+............................................................
+.........#......................................x...........
+............................................................
+.mmmmm................................................mmmmm.
+Colours: .=(45,65,68), a=(129,83,66), b=(34,53,58), c=(36,55,60), d=(39,58,62), e=(40,59,63), f=(43,62,66), g=(35,54,59), h=(44,64,67), i=(37,56,61), j=(41,60,64), k=(45,65,67), l=(45,66,68), m=(41,52,59), n=(47,68,70), o=(235,118,80), p=(48,69,71), q=(244,191,112), r=(38,57,61), s=(42,61,65), t=(46,67,69), u=(59,76,80), v=(70,84,90), w=(101,169,224), x=(255,244,214), y=(94,70,63), z=(185,222,240)
+Text drawn in this frame (x, y = its top-left corner):
+  'АТАКИ' at x=20 y=10, size 86x30
+  'Клепатель I' at x=60 y=109, size 92x18
+  'Клепатель II' at x=254 y=109, size 96x18
+  'Шквал' at x=472 y=109, size 52x18
+  'Молот' at x=81 y=197, size 50x18
+  'Котёл I' at x=275 y=197, size 54x18
+  'Котёл II' at x=469 y=197, size 58x18
+  'Жаровня' at x=69 y=285, size 73x18
+  'Мортира' at x=267 y=285, size 69x18
+  'Стужа I' at x=469 y=285, size 57x18
+  'Стужа II' at x=75 y=373, size 61x18
+  'Мороз' at x=277 y=373, size 50x18
+  'Ледокол' at x=464 y=373, size 67x18
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

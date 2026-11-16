@@ -1,0 +1,37 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaiai#a#aaaaaaaaaaaaaaaaaaaai#aaaaaaaaaaaaaaaaaatta##aaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.....d...........c................d..d..dd..........c..d....
+.dc...dd....c...c...ccc.d......d.....dcc...d.....daii.......
+ccdd..d.hfa#hc......huuuh...c.c.....c...d....ee....ccbfc....
+.da..d..pjjjp....c..hhhhh.cc.cdd..d.....c..d.....ddd.cccdd.c
+..anbbbbbbbbbb#bbbbbbbbbbaabbb.c.........c.....dd....c....d.
+...nbbbbaabbbbbbbababbg##j#fbbb...ddc.....d.................
+dd.jaaaaaaaaaaaahj#aaaaaaabfbbb...c.agha...c................
+dc.....c......hajah..aaaa.bfibb....hagah.cc.dddd........cc..
+...........dd.cccccdnaaa.cb##qq....aaaaa.c..l.ac......aaaac.
+d.....ggwwmmmggbbbbb#ababqxilxq.....aia....#lkd...cc.jaaa.d.
+....g.dd.gig..byibbbbbbbbbbb#b.d..dheeea.c.kkk.d..dd...daa.c
+...i....hgggh.bf#gb...c..c......dd.ccccc..d....d..ajaj...a..
+..ccgm..ccccccbygbbbbababbbbbbbbbzzbl#bbbbbbbbbbbbantnjcccc.
+d...d.d.gmmgg.dbf#fffffffff#ffffffffffff###afffffaaaaaaadd..
+..cciil.a.dd.c.r....cava.ccc.r......ad..caakacdd..ooooo.....
+d...a#ls......dv.c..hakah....vdcdd..a....pkkkpd.............
+.....sssdd.......rr.aaaaac##......c............d.......cc...
+....cc.eeaaaeaie#eeeeiaaaggaaba#i#aaa.aakkaaaia#aaaaa...dd.c
+..cc..ceejjaeeeeeeeeeiaaaaaaaaaaaaaaa.aakkaaaaaaaaaaa..ddd..
+.aaaaaceeeeeeeeeeeeeeiaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaa.aaaaa.
+Colours: .=(137,151,101), a=(41,52,59), b=(129,83,66), c=(114,130,94), d=(152,165,112), e=(70,84,90), f=(173,112,75), g=(235,118,80), h=(173,180,160), i=(244,191,112), j=(220,153,88), k=(101,169,224), l=(238,226,189), m=(178,135,91), n=(64,185,167), o=(99,112,85), p=(121,130,120), q=(92,83,79), r=(146,165,130), s=(223,113,145), t=(164,238,212), u=(115,129,128), v=(185,222,240), w=(165,123,87), x=(215,111,76), y=(199,113,76), z=(195,104,74)
+Text drawn in this frame (x, y = its top-left corner):
+  '5/10' at x=38 y=5, size 42x25
+  '240' at x=265 y=5, size 36x25
+  '82' at x=506 y=5, size 24x25
+  '1' at x=237 y=174, size 9x18
+  '2' at x=461 y=209, size 9x18
+  '3' at x=566 y=194, size 9x18
+  '4' at x=80 y=330, size 9x18
+  '50' at x=155 y=379, size 26x27
+  '80' at x=310 y=379, size 26x27
+  '70' at x=465 y=379, size 26x27
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

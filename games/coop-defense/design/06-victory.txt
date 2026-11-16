@@ -1,0 +1,31 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaaagggggggggaaaagggggggggaaaaagggggggggaaaagggggggggaaaaagg
+eaaaaeeeeeeeeeaaaaeeeeeeeeaaaaaeeeeeeeeaaaaeeeeeeeeeaaaaeeee
+hhhaaaahhhhhhhhaaaabhbhbhbhbaa#hhhh#bh#baahhhhhhhhaaaahhhhhh
+iiiiiaaaaiiiiiiiaaabibibibibab#iiib#bibabiiiiiiiaaaaiiiiiiia
+adddddddaaaddddddaaaaddddddaaadddddddaaadddddddaaadddddddaaa
+faaaffffffaaaffffffaaafffffaaaffffffaaaffffffaaaffffffaaafff
+ccccaaacccccaaaccccca#ccccccabbrccccaaccccccaaccccccaaccccca
+aalllllaalllllaalllllaaruvb######b#urlllllaalllllaalllllaall
+ppppaapp#paappppaapppuv#ws#b####b#sw##upaaapppaaappppaappppp
+nnnnnnnnaannnaannnarv#w###b#b##b#bb##w#vrnnnaannnaannnnnnnnn
+mmmmmmmmmmmmaammaarvxs###bbbbbbbbbb###sx#rammmammmmmmmmmmmmm
+jjjjjjjjjjjjjjjjajv#w##################s#vrjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkr#xs######yyyyyy#######x#rkkkkkkkkk#kkkkkkk
+ooooooooooozzbooorvxs#######yyyy#######sx#rooobzzooooooooooo
+qqqqqqqqqqbbbb....u#wzzz############zzzw#u....bbbbqqqqqqqqqq
+ttttttt............ubbbbb##########bbbbbvr............tttttt
+##..................u#xw############sx#u.#..........#.....##
+......................uv#xwss##sswx##ur.....................
+...............bbbbbbb###bbbbbb#bbb#bbbbbbbbb...............
+...............bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...............
+............................................................
+.bbbbb................................................bbbbb.
+Colours: .=(119,155,120), a=(183,197,139), b=(41,52,59), c=(119,152,123), d=(112,148,122), e=(102,142,122), f=(116,150,123), g=(98,140,122), h=(105,144,122), i=(109,146,122), j=(137,163,124), k=(140,165,124), l=(123,154,123), m=(133,161,123), n=(130,158,123), o=(144,167,124), p=(126,156,123), q=(147,169,124), r=(126,166,130), s=(126,173,130), t=(151,171,124), u=(126,167,130), v=(126,168,130), w=(126,172,130), x=(126,171,130), y=(126,191,130), z=(213,186,134)
+Text drawn in this frame (x, y = its top-left corner):
+  'ПОБЕДА' at x=189 y=30, size 224x59
+  'ПОБЕДА' at x=188 y=29, size 224x59
+  '10/10' at x=196 y=360, size 59x27
+  '12:18' at x=332 y=360, size 60x27
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

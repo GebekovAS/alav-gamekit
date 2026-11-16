@@ -1,0 +1,31 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+ddddddddddddddddddddddddddddddddddddddd#d#dddddddddddddddddd
+ffffffffffffffffff#fqqqfffffqf#fqf#ffqfq#qffffffffffffffffff
+iiiiiiiiiiiiiiiiii#qiqqqqiqqqi#iqiqqqqiqiqiiiiiiiiiiiiiiiiii
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+eeeeeeeeeeeeeeeeeeerereree#r#eerereerereereeeeeeeeeeeeeeeeee
+ggggggggggggggggggr#grgrgg###vvrgrggrgrggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhh#hhh#vwt##x###x#yw#hhhhhhhhhhhhhhhhhhhhhhh
+jjjjjjjjjjjjjjjjjjjjj#tx#####zz#####xywjjjjjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkkkvtx##z#a#a##aua#z##xt#kkkkkkkkkkkkkkkkkkk
+llllllllllllllllll#t#####aua#####ua#####y#llllllllllllllllll
+mmmmmmmmmmmmmmmmmm########u######a######xtvmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnvt##z###a##a##au#aa#####y#nnnnnnnnnnnnnnnnn
+ooooooooooooooooovt#####aaaa####aaaa##z##y#ooooooooooooooooo
+ppppppppppppaaa...w######################w...aaapppppppppppp
+sssssss....a###a...w##az#############auuav..a###a.....#sssss
+##.........#aaa#...a##############z##a#ua...#aaa#.........##
+..................#aaaa############xuaaaau..................
+.........................#wttyyytw#v........................
+.............................##.............................
+.............................aa.............................
+.aaaaa................................................aaaaa.
+Colours: .=(37,55,54), a=(41,52,59), b=(23,38,44), c=(28,43,47), d=(24,39,45), e=(29,45,48), f=(25,41,45), g=(30,46,49), h=(31,47,49), i=(26,42,46), j=(32,49,50), k=(33,50,51), l=(34,51,52), m=(36,53,52), n=(37,54,53), o=(38,55,54), p=(39,57,55), q=(255,244,214), r=(244,191,112), s=(40,58,56), t=(44,83,77), u=(220,153,88), v=(43,78,72), w=(44,81,75), x=(46,87,81), y=(45,84,78), z=(49,98,92)
+Text drawn in this frame (x, y = its top-left corner):
+  'МЕДНЫЙ' at x=176 y=27, size 250x61
+  'МЕДНЫЙ' at x=175 y=26, size 250x61
+  'ДОЗОР' at x=177 y=81, size 248x79
+  'ДОЗОР' at x=176 y=80, size 248x79
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

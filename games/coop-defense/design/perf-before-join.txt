@@ -1,0 +1,32 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaia##aaaaaaaaaaaaaaaaaaaaaa##aaaaaaaaaaaaaaaaaaqqaa##aaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.....d...........b................d..d..dd..........b..d....
+.db...dd....b...b...bbbla......d.....dbb...d.....daii.......
+bbdd..d.fij#fb......gggmf...b.b.....b...d....nn....bbceb....
+.da..d..ogggo..l.b..og#go.bb.bdd..d.....b..d.....ddd.bbbdd.b
+..ahcccccatthhhc#hfuuacccccccc.b.........b.....dd....b....d.
+...haccccaaaemfaa#a#c###lvv#ccc...ddb.....d.................
+dd.gaaaaaaaaaaaaf#aaaaaaaacecccwxw##x.lb...b................
+db.....b......fapaf.....b.ceccc....gnnmf.bb.dddd........bb..
+...........dd.bbbbbd.....brercr....akkka.b.....b.......dbbb.
+d.......bb....ccccccccccccceccc.....affa....bbd...bb......d.
+......dd.pip..cecccccccccccccc.d..dfapaf.b.b...d..dd...daa.b
+........faaaf.ceccc...b..b......dd.bbbbb..d....d..agag...a..
+..bb....bbbbbbceccccccccccccccccccccccccicccccccccahqhgbbbb.
+d...d.d.......dceeeeeeeeeeeeeeeeeeeeeeeeieeeeeeeeaaaaaaadd..
+..bbiia...dd.b......bbjd.bbb........ad..bayayahah.zzjjaa....
+d...aaa.......dd.b..fmjmf.....dbdd..a....ffff#lh...a#ja.....
+........dd..........akkkabbb......b..........asa#...ssaab...
+....bb.dbbbbb.ddb.b.....d.bb.b..........b...gaaag..#aaa.dd.b
+..bb..b.....bbdd......bb..dd......d......dd.......bb...ddd..
+.b..b.bd................b.............bb...dbb............d.
+Colours: .=(137,151,101), a=(41,52,59), b=(114,130,94), c=(129,83,66), d=(152,165,112), e=(173,112,75), f=(173,180,160), g=(220,153,88), h=(64,185,167), i=(244,191,112), j=(101,169,224), k=(40,51,58), l=(238,226,189), m=(115,129,128), n=(70,84,90), o=(121,129,120), p=(235,118,80), q=(164,238,212), r=(255,244,214), s=(213,186,134), t=(185,78,60), u=(64,97,123), v=(226,211,176), w=(233,186,110), x=(168,162,104), y=(185,222,240), z=(99,111,84)
+Text drawn in this frame (x, y = its top-left corner):
+  '1' at x=481 y=327, size 9x18
+  '2' at x=546 y=327, size 9x18
+  '3' at x=481 y=357, size 9x18
+  '4' at x=546 y=357, size 9x18
+  '20' at x=38 y=5, size 24x25
+  '263' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25

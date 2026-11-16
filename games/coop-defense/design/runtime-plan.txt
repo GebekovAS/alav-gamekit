@@ -1,0 +1,54 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+fffffffffffffffffffffiffxiif#x#i##iii#ffffffffffffffffffffff
+ggggggggggggggggggg#ggyg##z###gyg#jj#j#jjgg#gggggggggggggggg
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+eeeezejeeeeeeee#eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+kkk..##..................................................kkk
+lll..vv..#...............................................lll
+mmm......................................................mmm
+nnn..tt......t...............#j.#.#......................nnn
+ooo..v#......t...............#j#.#....#..................ooo
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ppp......#...............................................ppp
+qqq..www.................................................qqq
+rrr......................................................rrr
+sss......#...............................................sss
+uuh......................................................huu
+hhh......................................................hhh
+hhh.#iii..#...............j..............................hhh
+hhh...............j......................................hhh
+hhh......................................................hhh
+hhh...........................#..........................hhh
+Colours: .=(41,52,59), a=(34,53,58), b=(37,56,61), c=(39,58,62), d=(45,65,67), e=(38,57,61), f=(35,54,59), g=(36,55,60), h=(45,65,68), i=(244,191,112), j=(255,244,214), k=(40,59,63), l=(41,60,64), m=(42,61,65), n=(43,62,66), o=(44,64,67), p=(45,66,68), q=(46,67,69), r=(47,68,70), s=(48,69,71), t=(101,169,224), u=(49,70,72), v=(213,186,134), w=(220,153,88), x=(241,189,111), y=(226,219,194), z=(247,237,208)
+Text drawn in this frame (x, y = its top-left corner):
+  '2' at x=392 y=215, size 9x18
+  '1' at x=481 y=327, size 9x18
+  '2' at x=546 y=327, size 9x18
+  '3' at x=481 y=357, size 9x18
+  '4' at x=546 y=357, size 9x18
+  '0' at x=38 y=5, size 12x25
+  '240' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  'ПОДГОТОВКА' at x=231 y=37, size 137x23
+  '1' at x=12 y=38, size 9x18
+  '2' at x=54 y=38, size 9x18
+  '3' at x=96 y=38, size 9x18
+  '4' at x=138 y=38, size 9x18
+  'START — готов' at x=468 y=38, size 122x18
+  'План команды' at x=198 y=8, size 204x32
+  'Всего 240 / резерв 70 / свободно 170' at x=155 y=43, size 289x18
+  'x18' at x=40 y=78, size 27x18
+  'x9' at x=146 y=78, size 18x18
+  '1' at x=91 y=135, size 11x23
+  '2' at x=91 y=190, size 11x23
+  '70' at x=196 y=189, size 24x25
+  'Резерв' at x=294 y=181, size 56x18
+  'Место 5 • 14 с' at x=294 y=202, size 106x18
+  '3' at x=91 y=245, size 11x23
+  '4' at x=91 y=300, size 12x23
+  'Место 1' at x=44 y=357, size 83x25
+  'Пусто' at x=226 y=357, size 57x23
+  'L1/R1 — место  A — продажа рядом' at x=159 y=387, size 282x18
+  'B — отменить свой резерв / назад   Y — закрыть' at x=107 y=413, size 386x18

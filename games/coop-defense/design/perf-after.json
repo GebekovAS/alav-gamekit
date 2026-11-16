@@ -1,0 +1,27 @@
+{
+  "host": {
+    "mean_ms": 0.3655,
+    "p95_ms": 0.5092,
+    "max_ms": 0.6592,
+    "max_draw_calls": 92,
+    "mean_draw_calls": 82.9
+  },
+  "join": {
+    "mean_ms": 0.2392,
+    "p95_ms": 0.3006,
+    "max_ms": 0.5195,
+    "max_draw_calls": 89,
+    "mean_draw_calls": 80.1
+  },
+  "host_update": {
+    "mean_ms": 0.1331,
+    "p95_ms": 0.2658,
+    "max_ms": 0.3547
+  },
+  "fixture": "wave20/4p/64 preload/8 final towers/640 frames at 80Hz",
+  "source_sha256": {
+    "main.py": "7dac75b490eb41e2d4d48f18f77a00387e2ca7edb015dd2ddd66178d73494fc1",
+    "rules.py": "6d842433fb4fc549c28df7c14c5b43f150b5569c651d6150f9aed981e7ceb05a",
+    "assets/enemies.png": "0c83d710fd65b9bf55bf096c66ac0dccb6e5322bcf6d89866b96afe7d6bf01e6"
+  }
+}

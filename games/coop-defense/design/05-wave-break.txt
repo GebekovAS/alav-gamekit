@@ -1,0 +1,45 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+ffffwfiiiffffffffffffffffffffffffffffffffffffffif#ifffffffff
+eeeeee#ieieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+gggg#gggggggggg#gggggggggg.gggggggggg##ggggggggg...ggggggggg
+hhhhhhhhux#hhhhhhhhux#hhhhhhhhux#hhh....hu#hhhhh#.#huxhhhhhh
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+kkk..............#........#..............................kkk
+lll.....mm......#w..w..#vv#...........i..##..........#...lll
+nnn............yy.......yy...............................nnn
+ooo......................................................ooo
+ppp.#..jjj..............jj..............#.#..............ppp
+qqq.....................vvv..............................qqq
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+rrr.....w#.....##........................................rrr
+sss.#...mm.......#.......i................#ii.......#....sss
+ttt......................................................ttt
+zza......................................................azz
+aaa.#...mm....j..#......jj............i..#i#.........#...aaa
+aaa......................................................aaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+a.....aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.....a
+Colours: .=(41,52,59), a=(45,65,68), b=(34,53,58), c=(39,58,62), d=(45,66,68), e=(36,55,60), f=(35,54,59), g=(37,56,61), h=(38,57,61), i=(244,191,112), j=(101,169,224), k=(40,59,63), l=(41,60,64), m=(213,186,134), n=(42,61,65), o=(43,62,66), p=(44,64,67), q=(45,65,67), r=(46,67,69), s=(47,68,70), t=(48,69,71), u=(170,170,154), v=(70,84,90), w=(238,226,189), x=(48,65,68), y=(40,51,58), z=(49,70,72)
+Text drawn in this frame (x, y = its top-left corner):
+  '35' at x=61 y=16, size 44x45
+  '35' at x=60 y=15, size 44x45
+  '240' at x=494 y=19, size 51x34
+  'x48' at x=81 y=74, size 33x23
+  'x12' at x=191 y=74, size 33x23
+  'x10' at x=301 y=74, size 33x23
+  'x3' at x=411 y=74, size 22x23
+  'x1' at x=521 y=74, size 22x23
+  '1' at x=43 y=137, size 12x25
+  '140' at x=400 y=135, size 42x30
+  '2' at x=43 y=204, size 12x25
+  '70' at x=400 y=202, size 28x30
+  '3' at x=43 y=271, size 12x25
+  '2' at x=119 y=272, size 9x18
+  '70%' at x=286 y=273, size 36x21
+  '+115' at x=400 y=269, size 55x30
+  '4' at x=42 y=338, size 13x25
+  '155' at x=400 y=336, size 42x30
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

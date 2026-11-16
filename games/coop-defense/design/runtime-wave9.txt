@@ -1,0 +1,33 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaha##a#aaaaaaaaaaaaaaaaaaaa##aaaaaaaaaaaaaaaaaassaa##aaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.....d...........b................d..d..dd..........b..d....
+.db...dd....b...b...bbbpa......d.....dbb...d.....dahh.......
+bbdd..d.fhjtfb......gggtf...b.b.....b...d....uu....bbceb....
+.da..d..qgggq.p..b..qgggq.bb.bdd..d.....b..d.....ddd.bbbdd.b
+..aicccccccccccvvcjccccccccccc.b.........b.....dd....b....d.
+...iccccccccccacccc#jcpcaccaccc...ddb.....d.................
+dd.gaaaaaaaaaaaaff#piaaaaacecac...b..kbb...b................
+db.....b......fakiiaiiwwaaceiic....akkka.bb.dddd........bb..
+...........dd.hhhhhd.jaaaaaa#tc....allla.b.....b.......dbbb.
+d.......xxmmm.cccccccccchaaainnaa...kkk.....bbd...bb......d.
+......#d.jrj..#fccccccccgggga#na..dfaaaf.b.b...d..dd...daa.b
+.......mfajafmceycc...b..b...nn#dd.bbbbb..d....d..agag...a..
+..bb....bbbbbbcez#czcycccaaaacccccccccccccccccccccaisigbbbb.
+d...d.d.......dceeeeeeeeeeaa##reeeeeeeeeeeeeeeeeeaaaaaaadd..
+..bbhha...dd.b......bb.r.bbb........ad..bajrjbdd..ooooo.....
+d...aaa.......dd.b..fajaf.....dbdd..a....ffffad.............
+........dd..........alllabbb......b............d.......bb...
+....bb.dbbbbb.ddb.b.....d.bb.b..........b...............dd.b
+..bb..b.....bbdd......bb..dd......d......dd.......bb...ddd..
+.b.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.d.
+Colours: .=(137,151,101), a=(41,52,59), b=(114,130,94), c=(129,83,66), d=(152,165,112), e=(173,112,75), f=(173,180,160), g=(220,153,88), h=(244,191,112), i=(64,185,167), j=(101,169,224), k=(235,118,80), l=(40,51,58), m=(146,165,130), n=(223,113,145), o=(99,111,84), p=(238,226,189), q=(121,129,120), r=(185,222,240), s=(164,238,212), t=(115,129,128), u=(70,84,90), v=(118,116,127), w=(213,186,134), x=(128,148,124), y=(86,139,182), z=(108,147,184)
+Text drawn in this frame (x, y = its top-left corner):
+  '1' at x=211 y=152, size 9x18
+  '2' at x=246 y=177, size 9x18
+  '3' at x=281 y=202, size 9x18
+  '4' at x=316 y=227, size 9x18
+  '9/10' at x=38 y=5, size 42x25
+  '268' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  'A стройка/готов   B ремонт   X метка   Y план' at x=124 y=414, size 352x18

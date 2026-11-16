@@ -1,0 +1,64 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+jj#rjjzzrjr#jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+ggggggggggggggggggggggggggggggggggggggggggggggggggg#gggggggg
+nnnnnnsnnnnnnnnnnnnwspnnnnnnn#nnnnnrr#nnnnnnnnnnnp#pnnnnnnnn
+iii#iiiiiiii#iiiii#iiiiiii#iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+kkkkkkk##kkkkkkkkkkkkkr#kkkkkkkkkkkkk###kkkkkkkkkkkkk#kkkkkk
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+mmmmmprmmmmmmmmmmmmpr#mmmmmmmmmmmmmtttmmmmmmmmmmmmttmmmmmmmm
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+llllllxllllllllllllxxplllllllllllllp#pllllllllllllp#llllllll
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+hhhhhhh#hhhhhhhhhhhhh#hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+ooooooooooooo..................................ooooooooooooo
+qqqqqqq...............................................qqqqqq
+uu....................................................pyypuu
+..............y........p.........ww..........p#.......sssp..
+............v.......v.........v..........#............v.....
+............................................................
+............................................................
+.ppppp................................................ppppp.
+Colours: .=(45,65,68), a=(34,53,58), b=(40,59,63), c=(42,61,65), d=(43,62,66), e=(44,64,67), f=(45,66,68), g=(36,55,60), h=(46,67,69), i=(38,57,61), j=(35,54,59), k=(39,58,62), l=(45,65,67), m=(41,60,64), n=(37,56,61), o=(47,68,70), p=(41,52,59), q=(48,69,71), r=(244,191,112), s=(220,153,88), t=(235,118,80), u=(49,70,72), v=(255,244,214), w=(115,129,128), x=(101,169,224), y=(185,78,60), z=(54,66,63)
+Text drawn in this frame (x, y = its top-left corner):
+  'БАШНИ' at x=20 y=10, size 101x30
+  'Клепатель I' at x=34 y=87, size 92x18
+  '50' at x=71 y=106, size 18x18
+  'Клепатель II' at x=176 y=87, size 96x18
+  '+60' at x=210 y=106, size 27x18
+  'Шквал' at x=355 y=87, size 52x18
+  '+130' at x=363 y=106, size 36x18
+  'Молот' at x=500 y=87, size 50x18
+  '+140' at x=507 y=106, size 36x18
+  'Котёл I' at x=53 y=170, size 54x18
+  '80' at x=71 y=189, size 18x18
+  'Котёл II' at x=195 y=170, size 58x18
+  '+85' at x=210 y=189, size 27x18
+  'Жаровня' at x=344 y=170, size 73x18
+  '+155' at x=363 y=189, size 36x18
+  'Мортира' at x=490 y=170, size 69x18
+  '+165' at x=507 y=189, size 36x18
+  'Стужа I' at x=51 y=253, size 57x18
+  '70' at x=71 y=272, size 18x18
+  'Стужа II' at x=193 y=253, size 61x18
+  '+75' at x=210 y=272, size 27x18
+  'Мороз' at x=356 y=253, size 50x18
+  '+145' at x=363 y=272, size 36x18
+  'Ледокол' at x=491 y=253, size 67x18
+  '+155' at x=507 y=272, size 36x18
+  'Мелочь' at x=20 y=367, size 60x18
+  '10' at x=41 y=388, size 18x18
+  'Ходок' at x=117 y=367, size 49x18
+  '14' at x=133 y=388, size 18x18
+  'Бегунок' at x=201 y=367, size 66x18
+  '14' at x=225 y=388, size 18x18
+  'Панцирник' at x=297 y=367, size 90x18
+  '22' at x=333 y=388, size 18x18
+  'Носильщик' at x=412 y=367, size 93x18
+  '28' at x=450 y=388, size 18x18
+  'Босс' at x=538 y=367, size 39x18
+  '44' at x=549 y=388, size 18x18
+  '< B' at x=13 y=413, size 25x18
+  'A >' at x=550 y=413, size 24x18

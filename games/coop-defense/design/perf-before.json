@@ -1,0 +1,22 @@
+{
+  "host": {
+    "mean_ms": 1.0456,
+    "p95_ms": 1.524,
+    "max_ms": 6.4753,
+    "max_draw_calls": 179,
+    "mean_draw_calls": 139.5
+  },
+  "join": {
+    "mean_ms": 0.7589,
+    "p95_ms": 1.0556,
+    "max_ms": 2.9716,
+    "max_draw_calls": 177,
+    "mean_draw_calls": 136.8
+  },
+  "host_update": {
+    "mean_ms": 0.3016,
+    "p95_ms": 0.5982,
+    "max_ms": 2.6699
+  },
+  "fixture": "wave20/4p/64 preload/8 final towers/640 frames at 80Hz"
+}

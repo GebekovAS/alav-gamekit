@@ -1,0 +1,32 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+iiiiiiiiiiiiiiiiii##rrrrriririrrrirr#rirrriiiiiiiiiiiiiiiiii
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+eeeeeeeeeeeeeeeeeeejjjeejj#eejjeeejjeejjjeeeeeeeeeeeeeeeeeee
+dddddddddddddddddddjdjdjdddjddj##jddj#jddjdddddddddddddddddd
+ggggggggggggggggggjjjj##jjjgjjjjgjjjjgjggggggggggggggggggggg
+ffffffffffffffffff#fff#ywt##x###x#zw#fffffffffffffffffffffff
+hhhhhhhhhhhhhhhhhhhhh#tx####uuu#####xzwhhhhhhhhhhhhhhhhhhhhh
+kkkkkkkkkkkkkkkkkkkytx####nnv##vnn####xt#kkkkkkkkkkkkkkkkkkk
+llllllllllllllllll#t######nu#vv#un######z#llllllllllllllllll
+mmmmmmmmmmmmmmmmmm########nnn##nnn######xtymmmmmmmmmmmmmmmmm
+oooooooooooooooooyt######################z#ooooooooooooooooo
+pppppppppppp#nnppyt######################z#pp#nnpppppppppppp
+qqqqqqqqqqqn##vn..w#nnn##############nnnnw..n###nqqqqqqqqqqq
+sssssss....vvvvv...n#################n#uny..#####.....#sssss
+##.................#nn##############uunnuu................##
+......................#t###########xzwy.....................
+.......................#.#wt#j#zjw#j........................
+............................................................
+............................................................
+..................###........#r###rr#####.#.................
+Colours: .=(37,55,54), a=(23,38,44), b=(24,39,45), c=(26,42,46), d=(29,45,48), e=(28,43,47), f=(31,47,49), g=(30,46,49), h=(32,49,50), i=(25,41,45), j=(244,191,112), k=(33,50,51), l=(34,51,52), m=(36,53,52), n=(41,52,59), o=(37,54,53), p=(38,55,54), q=(39,57,55), r=(255,244,214), s=(40,58,56), t=(44,83,77), u=(220,153,88), v=(64,185,167), w=(44,81,75), x=(46,87,81), y=(43,78,72), z=(45,84,78)
+Text drawn in this frame (x, y = its top-left corner):
+  'МЕДНЫЙ' at x=176 y=21, size 250x61
+  'МЕДНЫЙ' at x=175 y=20, size 250x61
+  'ДОЗОР' at x=177 y=74, size 248x79
+  'ДОЗОР' at x=176 y=73, size 248x79
+  'A — создать' at x=232 y=358, size 135x25
+  'B — присоединиться' at x=195 y=387, size 210x23
+  'Крестовина — одиночная смена' at x=171 y=416, size 258x18

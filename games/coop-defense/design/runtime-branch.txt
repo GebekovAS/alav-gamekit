@@ -1,0 +1,35 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeee.uueeeeeeeeeeeeeeeeeeeeeeeeeee
+ffffffffffffffffffffffffffff...fffffffffffffffffffffffffffff
+ggggggggggggggggggggggggggggvaav.ggggggggggggggggggggggggggg
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+iiiiaaaaaaaaaaaaaaaaaaaaaaaaaii.........................iiii
+jjjjaaaaaaaaaaaaaaaaaaaaaaaaajj.........................jjjj
+kkkkaaaaaaaaaauuwwww#aaaaaaaakk.............#.hh........kkkk
+llllaaaaaaaaa.yy.aaaaaaaaaaaall...........uhhh..........llll
+mmmmaaaaaaaaannnnaaaaaaaaaaaamm..........aaaa.v.........mmmm
+ooooaaaaaaaaz.hhhhhazaaaaaaaaoo........#.hhhhha#........oooo
+ppppaaaaaaaaaaaaaaaaaaaaaaaaapp.........................pppp
+qqqqaaaaaaaaa##aaaaaaaaaaaaaaqq........#................qqqq
+rrrraaaaaaaaaaaaaaaaaaaaaaaaarr.........................rrrr
+ssssaaaaaaaaanaaaa#naaaaaaaaabb.........n...##n.........ssss
+ttttaaaaaaaaaaaaaaaaaaaaaaaaabb.........................tttt
+xxbbaaaaaaaaaaaaaaaaaaaaaaaaabb.........................bbxx
+bbbbaaaannaaaaaaaaaaa.aaaaaaabb.................v.......bbbb
+bbbbaaaaaaaaaaaaaaaaaaaaaaaaabb.........................bbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbb#bbbbbbbbbb#bbbbbbbbb#bbbbbbbbb#bbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Colours: .=(41,52,59), a=(70,84,90), b=(45,65,68), c=(34,53,58), d=(38,57,61), e=(35,54,59), f=(36,55,60), g=(37,56,61), h=(220,153,88), i=(39,58,62), j=(40,59,63), k=(41,60,64), l=(42,61,65), m=(43,62,66), n=(244,191,112), o=(44,64,67), p=(45,65,67), q=(45,66,68), r=(46,67,69), s=(47,68,70), t=(48,69,71), u=(173,180,160), v=(115,129,128), w=(101,169,224), x=(49,70,72), y=(173,112,75), z=(58,71,77)
+Text drawn in this frame (x, y = its top-left corner):
+  '1' at x=120 y=107, size 9x18
+  '0/10' at x=38 y=5, size 42x25
+  '240' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  'ПОДГОТОВКА 43' at x=217 y=37, size 165x23
+  'Шквал' at x=119 y=242, size 92x32
+  '130' at x=152 y=277, size 48x32
+  'Молот' at x=391 y=242, size 87x32
+  '140' at x=422 y=277, size 48x32
+  'Крестовина   A — купить   Y — резерв   B — назад' at x=104 y=407, size 392x18

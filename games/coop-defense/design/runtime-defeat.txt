@@ -1,0 +1,30 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+nnnnnnnnnnnnnnn#nyqn#nqnqqqn#nn#qnnnnn#q#qnnnnnnnnnnnnnnnnnn
+ooooooooooooooo#oyoqqoqo#oo#qooqqqqooo#qoqoqqooooooooooooooo
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhhhhhhhhhhararrauahhhhhhhhhhhhhhhhhhhhhhhhhh
+jjjjjjjjjjjjjjjjjjjjjjjjjaurrazrraajjjjajjjjjjjjjjjjjjjjjjjj
+iiiiiiiiiiiiiiiiiiiiiiiiiruraazrrariiiiiiiiiiiiiiiiiiiiiiiii
+kkkkkkkkkkkkkkkkkkkkkkkkka#rarrau#aakkkkkkkkkkkkkkkkkkkkkkkk
+llllllllllllllllllllllllaaalaaaaaaaallllllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmmmmmsssssssssssssmmmmmmmmmmmmmmmmmmmmmmm
+ppppppppppppp........................aa........ppppppppppppp
+ttttttt.....................aaav......................tttttt
+ww..........................uuuu..........................ww
+......aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa......
+......aaaaaaaaaaaaaaavava#vva#aaav#aa#vaaaaaaaaaaaaaaa......
+......aaaaaaaaaaaaaa#xx#x#a##aa#####xaaaaaaaaaaaaaaaaa......
+............................................................
+............................................................
+Colours: .=(60,39,42), a=(41,52,59), b=(50,30,36), c=(51,31,36), d=(55,33,38), e=(56,34,38), f=(57,35,38), g=(58,36,39), h=(60,36,39), i=(62,38,40), j=(61,37,40), k=(63,39,41), l=(64,40,41), m=(66,41,42), n=(52,32,37), o=(54,32,37), p=(67,41,42), q=(246,180,183), r=(129,83,66), s=(56,44,48), t=(68,42,43), u=(220,153,88), v=(244,191,112), w=(69,43,43), x=(255,244,214), y=(101,90,95), z=(185,78,60)
+Text drawn in this frame (x, y = its top-left corner):
+  'ПОРАЖЕНИЕ' at x=145 y=30, size 311x54
+  'ПОРАЖЕНИЕ' at x=144 y=29, size 311x54
+  'Волна 7    08:44' at x=208 y=350, size 183x27
+  'Рекорд команды (1): 7' at x=202 y=380, size 195x21
+  'A — новая смена' at x=223 y=413, size 154x21
