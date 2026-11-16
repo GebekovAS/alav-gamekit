@@ -328,7 +328,7 @@ def stage(slug):
     info = meta(path)
     out = os.path.join(DIST, os.path.basename(path))
     shutil.rmtree(out, ignore_errors=True)
-    shutil.copytree(path, out, ignore=shutil.ignore_patterns(*SKIP, ".*", "*.pyc", "test_*"))
+    shutil.copytree(path, out, ignore=shutil.ignore_patterns(*SKIP, ".*", "*.pyc", "test_*", "probe_*", "design"))  # design notes and tools stay on the PC
     for name in ("alav.py", "r36t.py", "font.ttf", "font-license.txt"):  # r36t.py: old import name
         shutil.copy(os.path.join(KIT, name), out)
     with open(os.path.join(out, "version.txt"), "w", newline="\n") as f:
