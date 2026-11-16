@@ -20,6 +20,8 @@ HEADS=g.image('heads.png')
 FX=g.image('effects.png')
 BRIGHT_FX=g.image('effects-bright.png')
 LATE=g.image('lategame.png')
+FOG=g.image('fog.png')  # overcharge mist, 4 players x 4 frames of 300x220, drawn at scale 2 (design/make_fog_art.py)
+fog_since=None
 WORKERS=g.image('workers.png')
 MASTERY=g.image('mastery-towers.png')
 ENEMY_HEALTH=g.image('enemy-health.png')
@@ -602,6 +604,19 @@ def draw_result():
     text('A — новая смена (ведущий)' if not net.is_host else 'A — новая смена',300,413,CREAM,18,'center')
 
 
+def draw_fog():
+    """Only the player who overcharges a tower sees the mist close in around the screen."""
+    global fog_since
+    over=match.over if net.is_host and match else view.get('oc',{})
+    if not any(str(pid)==my_id for pid in over.values()):
+        fog_since=None;return
+    if fog_since is None:
+        fog_since=clock;g.tone(170,320,420,volume=.12,wave='sine')
+    age=clock-fog_since
+    col=0 if age<.3 else 1+int(age*5)%3
+    g.draw(FOG,0,0,2,src=(col*300,seat(my_id)*220,300,220))
+
+
 def draw():
     g.clear(INK)
     if net is None:draw_title();return
@@ -611,6 +626,7 @@ def draw():
     if view['s']=='room':draw_room();return
     if view['s']=='defeat':draw_result();return
     draw_world()
+    draw_fog()
     p=view['p'].get(my_id)
     if p:
         if p[2]=='build':draw_build(p)
