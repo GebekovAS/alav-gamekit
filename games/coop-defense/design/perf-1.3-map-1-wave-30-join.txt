@@ -1,0 +1,29 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aahaz#aaaaaaaaaaaaaaaaaaaaaa#haaaaaaaaaaaaaaaaaaooaa##aaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.....c...........b................c..c..cc..........b..c....
+.cb...aa....b...b.aabbbac......c.....cbb...c.....cahh.......
+bbcc.amjaap#t#q..amraa#nf...b.b.....b...c....uu....bbdeb....
+.ca..jaajiiaf.vqq#aarii#f.bb.bcc..c.....b..c.....ccc.bbbcc.b
+..ajdddddddddadaap#tp#jf##dddd.b.........b.....cc....b....c.
+...jdddddddadissaae#famaaw#gasd...ccb.....c.................
+cc.iaaaaaaaaaaaaafaaaaaaaaw#dgd.akkaamxk...b................
+cb.....b...aaaiagnf.....b.d#v#d.##kaffnk.bb.cccc........bb..
+...........cc.ahaabc.....byey##....aaaaa.b.....b.......cbbb.
+c.......bb....dddddddddddddeddd.....gffa....bbc...bb......c.
+......cc.ghg..dedddddddddddddd.c..cfaggf.b.b...c..cc...caa.b
+........faggf.deddd...b..b......cc.ahaab..c....c..aiai...a..
+..bb....ahaabbdeddddddddddddddddddddddddhdddddddddajojibbbb.
+c...c.c.......cdeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeaaaaaaacc..
+..bbhha...cc.b......bbgc.bbb........ac..bgxaggcc..lllll.....
+c...aaa.......cc.b..garaf.....cbcc..a....affnfc.............
+........cc..........aaaaabbb......b............c.......bb...
+....bb.cbbbbb.ccb.b.....c.bb.b..........b...............cc.b
+..bb..b.....bbcc......bb..cc......c......cc.......bb...ccc..
+.b..b.bc................b..h.h........bb...cbb............c.
+Colours: .=(137,151,101), a=(41,52,59), b=(114,130,94), c=(152,165,112), d=(129,83,66), e=(173,112,75), f=(173,180,160), g=(235,118,80), h=(244,191,112), i=(220,153,88), j=(64,185,167), k=(223,113,145), l=(99,111,84), m=(238,226,189), n=(115,129,128), o=(164,238,212), p=(86,119,135), q=(145,179,160), r=(101,169,224), s=(185,78,60), t=(167,197,196), u=(70,84,90), v=(255,255,245), w=(192,166,117), x=(185,222,240), y=(255,244,214), z=(216,171,104)
+Text drawn in this frame (x, y = its top-left corner):
+  'A: меню / держать: разгон' at x=196 y=414, size 208x18
+  '30' at x=38 y=5, size 24x25
+  '291' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25

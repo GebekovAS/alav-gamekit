@@ -1,3 +1,74 @@
+# Медный дозор 1.3.0 — late-wave performance
+
+Measured 2026-11-16 on this Windows PC with the real SDL renderer. **The draw-call
+budget passes; the requested +10% historical timing bound is NOT met.** Historical
+measurements below are retained unchanged. No console performance claim is made.
+
+## Version 1.3.0 workload and results
+
+Run sequentially, for map IDs 0 through 3:
+`python -B games/coop-defense/probe_perf.py after 0 20` and the same with `30`.
+Each fixture has four actual players, eight final towers with two mastery stars,
+60 road enemies from the actual four-player wave plus four jammers (two landed,
+two initially airborne), and four workers holding A at four different towers.
+The probe asserts four independent active overcharges after the hold threshold,
+the 64 combined alive limit and the requested wave throughout 640 frames at 80Hz.
+Flight, shooting, landing and subsequent pending releases use the real rules.
+Landed drones stay present throughout. The previous fixture had 64 road enemies;
+this one reserves four slots for drones rather than exceeding the cap.
+
+Transport, input, persistence and sound use the same explicit substitutions as the
+older probe. Rules, main.update/draw, snapshots and SDL are real. Network masks go
+through real host input handling. Wire deepcopy is included; JSON encoding, actual
+TCP/UDP/Wi-Fi and audio synthesis are excluded from these timings. Texture/font
+caches are warmed; screenshot writes are outside measured frames. Times are wall
+work times, not FPS. No best-of-repeat timing selection is used in this table.
+
+| Map | Wave | Mean host / join, ms | p95 host / join, ms | Peak calls host / join | Mean host update, ms |
+|---|---|---|---|---|---|
+| 1 | 20 | 0.3866 / 0.2752 | 0.7032 / 0.5381 | 86 / 86 | 0.1264 |
+| 1 | 30 | 0.4209 / 0.2919 | 0.7934 / 0.6002 | 94 / 93 | 0.1494 |
+| 2 | 20 | 0.3605 / 0.2536 | 0.6876 / 0.4828 | 86 / 85 | 0.1202 |
+| 2 | 30 | 0.3915 / 0.2670 | 0.6333 / 0.4214 | 88 / 88 | 0.1415 |
+| 3 | 20 | 0.3688 / 0.2612 | 0.6526 / 0.4739 | 91 / 90 | 0.1208 |
+| 3 | 30 | 0.4204 / 0.2840 | 0.8016 / 0.5598 | 88 / 88 | 0.1496 |
+| 4 | 20 | 0.3807 / 0.2701 | 0.7002 / 0.5405 | 86 / 85 | 0.1241 |
+| 4 | 30 | 0.3863 / 0.2600 | 0.6179 / 0.3311 | 89 / 89 | 0.1391 |
+
+Against each corresponding 1.2.0 map row below (wave 20 reference for both new
+waves), the worst mean increase is **19.53% host / 26.05% join**.
+p95 and individual maxima also exceed +10%; they are not claimed to pass.
+Peak calls are **94 or fewer** on every map and role. Raw per-map/wave JSON files
+`perf-1.3-map-*-wave-*.json` include maxima and hashes for the actual game sources,
+metadata and new runtime assets. Timing variability does not establish its cause
+or excuse the unmet threshold. This remains the outstanding acceptance criterion.
+
+Performance work in 1.3.0: worker number badges and active bolt are baked into one
+sprite copy per worker; up to five mastery pips are baked into tower variants;
+higher levels use a baked star plus one number draw. Large enemy sprites include
+their exact integer-width HP bar and existing status tint in the same copy;
+Health values stay exact; every original integer bar width is preserved. One transparent, pulsing
+outline per overcharged tower; one crackle copy per jammed tower or flying drone
+with shadow. Active attack effects select a brighter atlas without extra copies.
+Persistent signals consume part of the existing bounded decorative-effect budget.
+No simulation enemy is hidden/merged. Interaction targets are cached only while
+map, position, facing and full-wall eligibility are unchanged. Empty status sets
+skip redundant per-enemy max() work. Tower base stats and combat cadence are kept.
+New preloaded RGBA pixel buffers add 11,994,944 bytes (~11.44 MiB) for the bright
+512x3072 atlas, 336x112 signals, 224x136 workers, 576x336 tower variants and
+1980x588 enemy/HP variants;
+this is a calculated texture payload, excluding SDL bookkeeping and caches.
+
+`python -B games/coop-defense/probe_perf.py after 0 25 --late` renders
+`lategame.png` plus mastery-menu/plan shots using real game drawing and assets.
+The late capture changes displayed stars to 1-5 and 7 and moves worker four to a
+legal service position between pads 3 and 4: boosting 3 while targeting jammed 4
+exposes the B prompt. It does not change normal startup. All three captures were
+opened: pips, drawn star+7, worker bolts, pulsing outlines, red crackles, attack
+brightness, B prompt, next-star cost and team reservation are readable at 600x440.
+
+## Historical results (1.1.1 and 1.2.0)
+
 # Медный дозор 1.1.1 — wave 20 performance
 
 Measured 2026-11-16, Windows PC, Python 3.11, existing SDL2 software/headless

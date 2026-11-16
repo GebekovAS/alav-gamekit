@@ -138,13 +138,42 @@ h['recorded']=False;h['match'].wave_players=4;h['update'](.1)
 assert hk.saved['map_records']['2:2']==19 and hk.saved['map_records']['2:4']==19
 print('PASS host map picker/live join snapshot/solo selection/per-map records')
 
-# Existing title discovery behavior: a discovered host makes A join it.
+# Current title creates a room; discovering/joining rooms belongs to ALAV Store.
 h,hk=load();hk.find=lambda name:['127.0.0.1'];hk.edges={'A'}
 h['update'](.1)
-assert h['net'] is not None and not h['net'].is_host
-print('PASS title discovery still joins existing host')
+assert h['net'] is not None and h['net'].is_host
+print('PASS title creates host; ALAV Store supplies join role')
 
 for saved in ({},{'map':-1},{'map':4},{'map':'2'},{'map':True}):
     ns,kit=load(saved);ns['begin']('host',True)
     assert ns['match'].map_id==0
 print('PASS saved-map reload/default/validation and legacy record migration')
+
+# Late-game controls cross the real masks -> host action -> snapshot -> join path.
+from rules import A,B,Y,star_price
+h,hk=load();h['begin']('host',True);host=h['net'];host.peers={1:{}}
+h['update'](.1);m=h['match'];m.bank['cash']=1000
+m.towers[0]=[3,250,0.,0]
+p=m.players['1'];p['x'],p['y'],p['target']=104,138,0
+number=0
+def remote_input(held,pressed=0):
+    global number
+    number+=1;host.inbox=[(1,[number,held,pressed])];h['update'](.1)
+remote_input(A,A);assert not p['menu']
+remote_input(0);assert p['menu']=='build'
+remote_input(0,Y);assert m.bank['r']['1'][1:3]==[12,125]
+remote_input(A,A);remote_input(0);assert m.towers[0][3]==1 and m.bank['cash']==875
+remote_input(0)
+for i in range(4):remote_input(A,A if i==0 else 0)
+assert m.over=={0:'1'}
+c,ck=load();c['begin']('join')
+import json
+packet=json.loads(json.dumps(m.snapshot()));packet['you']='1'
+c['net'].inbox=[(0,packet)];c['update'](.1)
+assert c['view']['oc']=={'0':'1'} and c['view']['t'][0]==[3,375,1]
+remote_input(0);assert not m.over and not p['menu']
+m.jammers=[[9006,104.,100.,0,100.,True]]
+for _ in range(9):remote_input(B)
+assert m.jammers
+remote_input(B);assert not m.jammers and m.bank['cash']==883
+print('PASS network A tap/hold/release, mastery reservation/purchase, JSON join state, B removal/bounty')

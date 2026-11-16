@@ -1,0 +1,34 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+aagavgaaaaaaaaaaaaaaaaaaaaaawxaaaaaaaaaaaaaaaaaaooaayzaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.....d...........b................d..d..dd..........b..d....
+.db...aa....b...b.aabbbad......d.....dbb...d.....dagg.......
+bbdd.amiaapkfb...amnaa#kf...b.b.....b...d....rr....bbceb....
+.da..iaaijjaf..p.naanjja#.bb.bdd..d.....b..d.....ddd.bbbdd.b
+..aiccccccccccca#ccpaaifa#iifc.b.........b.....dd....b....d.
+...icccaccccccccassjaa#efattfac...ddb.....d.................
+dd.jaaaaaaaaaaaaaaaaaaaaaaca#cc...b..mu#...b................
+db.....b...aaa#ahkf.....b.cec#c....affk#.bb.dddd........bb..
+...........dd.aggabd.....bqeqcq...aaamaa.b.....b.......dbbb.
+d.......bb....ccccccccccccceccc..aaa#ffa....bbd...bb......d.
+......dd.hgh..cecccccccccccccc.d..dfahhf.b.b...d..dd...daa.b
+........fahhf.ceccc...b..b......dd.ggggg..d....d..ajaj...a..
+..bb....aaaabbceccccccccccccccccccccccccgcccccccccaioijbbbb.
+d...d.d.......dceeeeeeeeeeeeeeeeeeeeeeeegeeeeeeeeaaaaaaadd..
+..bbgga...dd.b......bbhd.bbb........ad..bhuahhdd..lllll.....
+d...aaa.......dd.b..hanaf.....dbdd..a....affkfd.............
+........dd..........aaaaabbb......b............d.......bb...
+....bb.dbbbbb.ddb.b.....d.bb.b..........b...............dd.b
+..bb..b.....bbdd......bb..dd......d......dd.......bb...ddd..
+.b..b.bd................bg............bb...dbb............d.
+Colours: .=(137,151,101), a=(41,52,59), b=(114,130,94), c=(129,83,66), d=(152,165,112), e=(173,112,75), f=(173,180,160), g=(244,191,112), h=(235,118,80), i=(64,185,167), j=(220,153,88), k=(115,129,128), l=(99,111,84), m=(238,226,189), n=(101,169,224), o=(164,238,212), p=(157,225,255), q=(255,244,214), r=(70,84,90), s=(185,78,60), t=(147,156,137), u=(185,222,240), v=(216,171,104), w=(161,134,90), x=(236,185,109), y=(60,162,148), z=(62,174,158)
+Text drawn in this frame (x, y = its top-left corner):
+  'A: меню / держать: разгон' at x=196 y=414, size 208x18
+  '25' at x=38 y=5, size 24x25
+  '360' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  '7' at x=436 y=358, size 9x18
+  'B держать: снять' at x=231 y=414, size 138x18
+  '25' at x=38 y=5, size 24x25
+  '360' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25

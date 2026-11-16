@@ -1,0 +1,60 @@
+The screen (600x440) as text: one character is 10x20 pixels, '.' is the background.
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+fffffffffffffffffffffjffyjjf#y#j##jjj#ffffffffffffffffffffff
+ggggggggggggggii#igg#izg##u###giggi#u#ui#ugagzgggggggggggggg
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+eeeeeeeeeeeeeeeeeeeeeeee.#j#........eeeeeeeeeeeeeeeeeeeeeeee
+kkk..vv.....vv...............#i........i.................kkk
+lll..xx..#..jj#..............#i.......#..................lll
+mmm......................................................mmm
+nnn..##..................................................nnn
+ooo..x#..................................................ooo
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ppp......#...............................................ppp
+qqq..ttt.................................................qqq
+rrr......................................................rrr
+sss......#...............................................sss
+wwh......................................................hww
+hhh......................................................hhh
+hhh.#jjj..#......#.......##.#i#.#i.#...i##...............hhh
+hhh.............#tit#....................................hhh
+hhh......................................................hhh
+hhh...........................#..........................hhh
+Colours: .=(41,52,59), a=(37,56,61), b=(34,53,58), c=(38,57,61), d=(45,65,67), e=(39,58,62), f=(35,54,59), g=(36,55,60), h=(45,65,68), i=(255,244,214), j=(244,191,112), k=(40,59,63), l=(41,60,64), m=(42,61,65), n=(43,62,66), o=(44,64,67), p=(45,66,68), q=(46,67,69), r=(47,68,70), s=(48,69,71), t=(220,153,88), u=(247,237,208), v=(238,226,189), w=(49,70,72), x=(213,186,134), y=(241,189,111), z=(226,219,194)
+Text drawn in this frame (x, y = its top-left corner):
+  'A: меню / держать: разгон' at x=196 y=414, size 208x18
+  '25' at x=38 y=5, size 24x25
+  '360' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  '7' at x=436 y=358, size 9x18
+  'B держать: снять' at x=231 y=414, size 138x18
+  '25' at x=38 y=5, size 24x25
+  '360' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  '7' at x=436 y=358, size 9x18
+  '25' at x=38 y=5, size 24x25
+  '360' at x=265 y=5, size 36x25
+  '100' at x=506 y=5, size 36x25
+  'Мастерство 2: +15%' at x=179 y=349, size 215x25
+  '180' at x=204 y=380, size 39x27
+  'A — купить   Y — резерв   B — назад' at x=157 y=414, size 286x18
+  '7' at x=436 y=358, size 9x18
+  '1' at x=122 y=65, size 9x18
+  '25' at x=38 y=5, size 24x25
+  '10000' at x=265 y=5, size 60x25
+  '100' at x=506 y=5, size 36x25
+  'План команды' at x=198 y=8, size 204x32
+  'Всего 10000 / резерв 180 / свободно 9820' at x=137 y=43, size 325x18
+  '1' at x=91 y=135, size 11x23
+  '180' at x=196 y=134, size 36x25
+  'Мастерство 2' at x=294 y=126, size 108x18
+  'Место 1 • 16 с' at x=294 y=147, size 106x18
+  '2' at x=91 y=190, size 11x23
+  '3' at x=91 y=245, size 11x23
+  '4' at x=91 y=300, size 12x23
+  'Место 1' at x=44 y=357, size 83x25
+  'Продажа +252 (70%)' at x=226 y=357, size 197x23
+  'L1/R1 — место  A — продажа рядом' at x=159 y=387, size 282x18
+  'B — отменить свой резерв / назад   Y — закрыть' at x=107 y=413, size 386x18
+  'Резерв 15 с' at x=254 y=99, size 91x18

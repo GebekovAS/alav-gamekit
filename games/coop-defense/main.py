@@ -18,6 +18,11 @@ ICONS=g.image('icons.png')
 CORE=g.image('core.png')
 HEADS=g.image('heads.png')
 FX=g.image('effects.png')
+BRIGHT_FX=g.image('effects-bright.png')
+LATE=g.image('lategame.png')
+WORKERS=g.image('workers.png')
+MASTERY=g.image('mastery-towers.png')
+ENEMY_HEALTH=g.image('enemy-health.png')
 PIN=g.image('pins.png')
 BROKEN=g.image('core-broken.png')
 GHOST=g.image('reservations.png')
@@ -35,9 +40,10 @@ FX_CAP=37  # Plus at most three enemy status overlays: total effects <=40.
 effect_limit=FX_CAP
 effect_calls=0
 effect_queue=[]
+effect_boost=False
 
 def fx(name,x,y,frame=0,scale=1,angle=0):
-    effect_queue.append((name,x,y,frame,scale,angle))
+    effect_queue.append((name,x,y,frame,scale,angle,effect_boost))
     if len(effect_queue)>effect_limit:effect_queue.pop(0)
 
 def ray(name,a,b,frame):
@@ -105,10 +111,6 @@ def enemy(kind,x,y,scale=1):
     n=ENEMY_SIZES[kind]
     g.draw(ENEMIES,x,y,scale,src=(kind*44,0,n,n))
 
-def hp(kind,x,y,fraction):
-    n=ENEMY_SIZES[kind]
-    g.rect(x,y-5,max(1,int(n*fraction)),2,TEAL)
-
 def player(i,x,y,scale=2,badge=True):
     g.draw(PLAYERS,x,y,scale,src=(i*24,0,24,24))
     if badge:
@@ -121,7 +123,7 @@ def head(i,x,y):
 from maps import MAPS
 from rules import (Match, BUTTONS, PADS, WALL_POS, ENEMIES as ENEMY_DATA, NAMES,
                    TOWERS as TOWER_DATA, enemy_kind, enemy_xy, scaled_wave, enemy_hp, repair_quote,
-                   upgrade_options, refund, A, B, UP, DOWN, LEFT, RIGHT, START, SELECT)
+                   upgrade_options, refund, star_price, A, B, UP, DOWN, LEFT, RIGHT, START, SELECT)
 # Keep the rules table separate from the sprite atlas.
 ENEMY_SIZES=[10,14,14,22,28,44]
 TOWER_NAMES=[NAMES[i:i+4] for i in (0,4,8)]
@@ -379,7 +381,7 @@ def tower_at(index,x,y,scale=2):
 
 
 def draw_world():
-    global effect_limit,active_map
+    global effect_limit,active_map,effect_boost
     m=MAPS[view.get('map',0)]
     active_map=m
     pads=m['pads'];walls=m['walls'];map_id=view.get('map',0)
@@ -396,13 +398,31 @@ def draw_world():
         if str(w) in view.get('fix',{}):icon(6,wx-8,wy-36)
     for pad,t in enumerate(view['t']):
         if t:
-            x,y=pads[pad];tower_at(t[0],x-24,y-32)
+            x,y=pads[pad]
+            count=t[2] if len(t)>2 else 0
+            if count:
+                g.draw(MASTERY,x-24,y-32,src=(t[0]*48,(min(6,count)-1)*56,48,56))
+                if count>5:text(str(count),x+2,y+12,GOLD,16)
+            else:tower_at(t[0],x-24,y-32)
+    over=match.over if net.is_host and match else {int(k):v for k,v in view.get('oc',{}).items()}
+    jams=match.jammers if net.is_host and match else view.get('j',[])
+    jammed={j[3] for j in jams if j[5]} if net.is_host and match else {j[1] for j in jams if len(j)==2}
+    for pad,pid in over.items():
+        x,y=pads[pad];slot=seat(pid);frame=int(clock*8)%2
+        g.draw(LATE,x-28,y-38,src=(slot*56,frame*48,56,48))
+    for pad in jammed:
+        x,y=pads[pad];g.draw(LATE,x-28,y-38,src=(224+(int(clock*10)%2)*56,0,56,48))
+    for j in jams:
+        if (j[5] if net.is_host and match else len(j)==2):continue
+        g.draw(LATE,j[1]-16,j[2]-20,src=(224,48,32,40))
     g.draw(CORE if view['h']>0 else BROKEN,m['core'][0]-40,m['core'][1]-39,1.65)
     health_caps=[enemy_hp(k,view['n']) for k in range(6)]
     live=net.is_host and match is not None
     enemies=match.enemies if live else view['e']
     now=match.time if live else view['now']
-    effect_limit=20 if len(enemies)>40 else FX_CAP
+    # Spend the existing effect budget on persistent, actionable late-wave signals.
+    overlay_calls=len(over)+len(jams)+sum(bool(t and len(t)>2 and t[2]>5) for t in view['t'])
+    effect_limit=max(8,(20 if len(enemies)>40 else FX_CAP)-max(0,overlay_calls-5))
     old_enemies={e[0]:e for e in previous['e']} if previous and not live else {}
     small,packed=crowd_groups(enemies)
     for group in packs:
@@ -425,13 +445,16 @@ def draw_world():
         old=old_enemies.get(ident,e);progress=interpolate(old[1],progress)
         x,y=enemy_xy(ident,progress,map_id);health=e[2] if len(e)>2 else health_caps[kind]
         style=enemy_style(e,live,now)
-        if style:
+        if kind>=3 and health<health_caps[kind]:
+            width=max(1,int(n*health/health_caps[kind]))
+            tint=0 if not style else 1 if style==3 else 2 if style==4 else 3
+            g.draw(ENEMY_HEALTH,x-n/2,y-n/2-5,src=(width*44,((kind-3)*4+tint)*49,n,n+5))
+        elif style:
             affected_enemy(kind,x-n/2,y-n/2,0 if style==3 else 1 if style==4 else 2)
         else:enemy(kind,x-n/2,y-n/2)
-        if kind>=3 and health<health_caps[kind]:hp(kind,x-n/2,y-n/2,health/health_caps[kind])
     for pid,r in view['r'].items():
         pad,index,cost,expires,sale=r;x,y=pads[pad];i=seat(pid)
-        if not sale:g.draw(GHOST,x-24,y-36,2,src=(index*24,0,24,24))
+        if not sale:g.draw(GHOST,x-24,y-36,2,src=((view['t'][pad][0] if index>=12 and view['t'][pad] else index)*24,0,24,24))
         icon(1 if sale else 9,x-8,y-55)
         text(str(i+1),x+23,y-35,COLORS[i],16,'center')
         g.rect(x-22,y+16,44,4,INK);g.rect(x-22,y+16,44*max(0,min(1,(expires-view['now'])/15)),3,COLORS[i])
@@ -443,7 +466,7 @@ def draw_world():
         old=previous['p'].get(pid,p) if previous else p
         if live and pid in match.players:x,y=match.players[pid]['x'],match.players[pid]['y']
         else:x=interpolate(old[0],p[0]);y=interpolate(old[1],p[1])
-        player(seat(pid),x-24,y-32,2)
+        g.draw(WORKERS,x-24,y-49,src=(seat(pid)*56,68 if pid in over.values() else 0,56,68))
         if p[5]:icon(4,x-8,y-51)
     local=view['p'].get(my_id)
     if local:
@@ -452,6 +475,7 @@ def draw_world():
             if 0<=target<8:
                 x,y=pads[target];g.rect(x-24,y-21,48,42,GOLD,fill=False)
                 icon(3,local[0]+22,local[1]-30,1.25)
+                text('B держать: снять' if target in jammed else 'A: меню / держать: разгон' if view['t'][target] else 'A: строить',300,414,GOLD,16,'center')
             elif 8<=target<10 and view['w'][target-8]<150:
                 hp_now=view['w'][target-8]
                 cost=10 if hp_now<=0 else repair_quote(hp_now)[1]
@@ -464,9 +488,11 @@ def draw_world():
     effect_queue.clear()
     latest={}
     events=match.effects if live else view.get('fx',[])
+    boosted_sources={(pads[pad][0],pads[pad][1]-16) for pad in over}
     for e in events:
         if e[1] in (2,6,8,9,10):latest[(e[1],e[2],e[3])]=e[0]
     for e in events:
+        effect_boost=(e[2],e[3]) in boosted_sources
         # A beam/ring is one sustained attack, not a stack of identical sprites.
         if e[1] in (2,6,8,9,10):
             source=(e[1],e[2],e[3])
@@ -476,16 +502,17 @@ def draw_world():
             if e[1]<0:
                 if age<.384:fx('scrap',e[4],e[5],min(3,int(age/.096)),.65)
             else:attack(e[1],(e[2],e[3]),(e[4],e[5]),(now%1.2)/1.2 if e[1] in (2,6,8,9,10) else age/1.2)
-    for name,x,y,frame,scale,angle in effect_queue:
+    for name,x,y,frame,scale,angle,boosted in effect_queue:
         bx,by,w,h=FX_BOUNDS[name]
-        g.draw(FX,x-w*scale/2,y-h*scale/2,scale,angle=angle,src=((frame%4)*128+bx,FX_ROWS[name]*128+by,w,h))
+        g.draw(BRIGHT_FX if boosted else FX,x-w*scale/2,y-h*scale/2,scale,angle=angle,src=((frame%4)*128+bx,FX_ROWS[name]*128+by,w,h))
     draw_hud()
 
 
 def draw_build(p):
     target=p[4]
     if not 0<=target<8:return
-    t=view['t'][target];options=upgrade_options(t[0] if t else None)
+    t=view['t'][target];count=t[2] if t and len(t)>2 else 0
+    options=[12+count] if t and t[0]%4>=2 else upgrade_options(t[0] if t else None)
     if not options:return
     selected=p[3]%len(options)
     if t is None:
@@ -511,8 +538,9 @@ def draw_build(p):
         text('Крестовина   A — купить   Y — резерв   B — назад',300,407,CREAM,16,'center')
     else:
         index=options[0];g.rect(69,340,462,94,INK)
-        tower_at(index,90,350,3);text(NAMES[index],179,349,CREAM,24)
-        icon(1,180,385);text(str(TOWER_DATA[index][0]),204,380,GOLD,24)
+        tower_at(t[0] if index>=12 else index,90,350,3)
+        text('Мастерство %d: +15%%'% (count+1) if index>=12 else NAMES[index],179,349,CREAM,22)
+        icon(1,180,385);text(str(star_price(t[0],count) if index>=12 else TOWER_DATA[index][0]),204,380,GOLD,24)
         text('A — купить   Y — резерв   B — назад',300,414,CREAM,16,'center')
 
 
@@ -534,9 +562,9 @@ def draw_plan(p):
         r=view['r'].get(pid)
         if r:
             pad,index,cost,expires,sale=r
-            tower_at(index,112,y,2);icon(7,168,y+16)
+            tower_at(view['t'][pad][0] if index>=12 and view['t'][pad] else index,112,y,2);icon(7,168,y+16)
             text('+%d'%refund(view['t'][pad][1]) if sale and view['t'][pad] else str(cost),196,y+12,GOLD,22)
-            text('Продать' if sale else 'Резерв',294,y+4,CREAM,16)
+            text('Продать' if sale else 'Мастерство %d'%(index-11) if index>=12 else 'Резерв',294,y+4,CREAM,16)
             text('Место %d • %d с'%(pad+1,max(0,math.ceil(expires-view['now']))),294,y+25,CREAM,16)
         if q[5]:icon(4,526,y+14,1.5)
     pad=p[3]%8;t=view['t'][pad]

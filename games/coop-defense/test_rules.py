@@ -262,7 +262,126 @@ def map_geometry():
     assert match.map_id==3 and all(not p['ready'] for p in match.players.values())
 
 
-for name,fn in [('all map geometry/snapshot/host picker/full wall targets',map_geometry),('endless formulas/ready/full walls',endless_and_ready),('atomic economy',economy),('reservation replacement/expiry/drop',replacement),
+def late_fixture(n=1):
+    m=Match()
+    for i in range(n):
+        m.add_player(str(i));p=m.players[str(i)]
+        p['x'],p['y']=104,138;p['target']=0
+    m.start();m.start_wave();m.pending=[]
+    m.towers[0]=[3,250,0.,0]
+    m.spawn(5,500);m.enemies[0][5]=1000;m.enemies[0][2]=1e9
+    return m
+
+
+def overcharge():
+    m=late_fixture();p=m.players['0']
+    m.tick(.1,{'0':(A,A)});assert not p['menu'] and not m.over
+    m.tick(.1,{'0':(0,0)});assert p['menu']=='build' and not m.over
+    m=late_fixture(2)
+    # Keep a healthy target in range for ten seconds; no stacks from two workers.
+    def shots(players):
+        m=late_fixture(players);m.spawn(5,80);m.enemies[-1][2]=1e9;m.enemies[-1][5]=100
+        for i in range(100):m.tick(.1,{str(pid):(A,A if i==0 else 0) for pid in range(players)})
+        return m.event,m
+    count,m=shots(1);double,d=shots(2)
+    assert count==double and 14<=count<=16,(count,double)
+    assert m.over=={0:'0'} and not m.players['0']['menu']
+    # Releasing, menu entry, leaving range and disconnect stop it on that tick.
+    m.tick(.01,{});assert not m.over and not m.players['0']['menu']
+    d.players['0']['x']=550;d.players['1']['x']=550
+    d.tick(.01,{'0':(A,0),'1':(A,0)});assert not d.over
+    d.remove_player('1');d.tick(.01,{});assert not d.over
+    m=late_fixture();m.towers[0][2]=100
+    for i in range(4):m.tick(.1,{'0':(A,A if i==0 else 0)})
+    assert m.over
+    m.tick(.01,{'0':(A,Y)});assert m.players['0']['menu']=='plan' and not m.over
+    # Cooldown advances exactly 1.5x, independently of the scan cadence.
+    m=late_fixture();m.towers[0][2]=10
+    m.spawn(5,80);m.enemies[0][5]=100
+    for i in range(3):m.tick(.1,{'0':(A,A if i==0 else 0)})
+    before=m.towers[0][2];m.tick(.1,{'0':(A,0)})
+    assert math.isclose(before-m.towers[0][2],.15)
+    before=m.towers[0][2];m.tick(.1,{})
+    assert math.isclose(before-m.towers[0][2],.1)
+
+
+def jammers():
+    for n in range(1,5):
+        assert all(jammer_count(w,n)==0 for w in range(1,12))
+        assert jammer_count(12,n)==(1,1,2,2)[n-1]
+        assert jammer_count(25,n)==(3,4,5,6)[n-1]
+        assert all(jammer_count(w,n)<=jammer_count(w+1,n) for w in range(12,40))
+    m=late_fixture();m.wave=12
+    assert m.spawn_jammer() and not m.spawn_jammer()
+    assert m.jammers[0][3]==0
+    # Flight follows the direct segment, independent of route/walls.
+    j=m.jammers[0];j[1:3]=[0.,100.]
+    m.towers[0][2]=100
+    m.tick(.1,{});assert math.isclose(j[1],10) and j[2]==100
+    for _ in range(11):m.tick(.1,{})
+    assert j[5] and not m.spawn_jammer()
+    m.phase='wave';m.towers[0][2]=0;m.spawn(5,90);hp_before=m.enemies[0][2]
+    m.tick(.1,{});assert m.enemies[0][2]==hp_before and not m.effects
+    cash=m.bank['cash']
+    for _ in range(5):m.tick(.1,{'0':(B,0)})
+    assert m.jammers
+    m.tick(.1,{})
+    for _ in range(9):m.tick(.1,{'0':(B,0)})
+    assert m.jammers and m.bank['cash']==cash
+    m.tick(.1,{'0':(B,0)});assert not m.jammers and m.bank['cash']==cash+JAMMER_BOUNTY
+    m.tick(.1,{});assert m.effects
+    # Airborne is targetable; landing keeps it immune even to area attacks.
+    m=late_fixture();m.wave=12;m.spawn_jammer();j=m.jammers[0]
+    j[1:3]=[0.,100.];j[4]=1
+    m.tick(.1,{});assert not m.jammers and m.bank['cash']==240+JAMMER_BOUNTY
+    # Spawn budget and offspring share the 64 alive slots.
+    for _ in range(64):m.spawn(0,0)
+    assert not m.spawn_jammer()
+    m=late_fixture();m.wave=11;m.phase='break';m.start_wave()
+    assert m.jammer_pending==1
+    m.tick(2.1,{});assert len(m.jammers)==1 and not m.jammer_pending
+    # A second worker cannot collect the same removal bounty.
+    m=late_fixture(2);m.spawn_jammer();j=m.jammers[0];j[5]=True
+    for _ in range(10):m.tick(.1,{'0':(B,0),'1':(B,0)})
+    assert m.bank['cash']==248 and not m.jammers
+    m=late_fixture();m.spawn_jammer();m.jammers[0][5]=True;p=m.players['0']
+    for _ in range(5):m.tick(.1,{'0':(B,0)})
+    p['x']=550;m.tick(.1,{'0':(B,0)});p['x']=104
+    for _ in range(9):m.tick(.1,{'0':(B,0)})
+    assert m.jammers
+    m.tick(.1,{'0':(B,0)});assert not m.jammers
+
+
+def mastery():
+    assert [star_price(3,s) for s in range(4)]==[125,188,281,422]
+    assert star_price(3,2000)>star_price(3,1999)>0
+    m=late_fixture(2);m.phase='prep';m.bank['cash']=10000
+    p=m.players['0'];q=m.players['1']
+    assert m.options(p)==[12]
+    m.tick(.01,{'0':(0,A)});assert p['menu']=='build'
+    m.tick(.01,{'0':(0,Y)});assert m.bank['r']['0'][1:3]==[12,125]
+    m.buy('1',12);assert stars(m.towers[0])==0
+    assert m.bank['cash']==10000 and free_cash(m.bank)==9875
+    m.tick(.01,{'0':(0,A)})
+    assert stars(m.towers[0])==1 and m.towers[0][1]==375 and not m.bank['r']
+    assert math.isclose(tower_damage(m.towers[0]),57.5)
+    m.buy('0',12);assert stars(m.towers[0])==1  # stale token rejected
+    for _ in range(7):m.buy('0',m.options(p)[0])
+    assert stars(m.towers[0])==8 and math.isclose(tower_damage(m.towers[0]),110)
+    total=m.towers[0][1];cash=m.bank['cash'];p['menu']='plan';p['sel']=0
+    m.sell_request('0');m.sell_request('0')
+    assert m.towers[0] is None and m.bank['cash']==cash+refund(total)
+    # New fields survive compact JSON snapshots, without leaking private timers.
+    m=late_fixture();m.towers[0][3]=7;m.over={0:'0'}
+    m.spawn_jammer();m.jammers[0][5]=True
+    m.towers[1]=[7,330,0.,2];m.spawn_jammer()
+    packet=json.loads(json.dumps(m.snapshot()))
+    assert packet['t'][0]==[3,250,7] and packet['oc']=={'0':'0'}
+    assert len(packet['j'][0])==2 and len(packet['j'][1])==3
+    assert len(json.dumps(packet).encode())<4096
+
+
+for name,fn in [('overcharge hold/release/rate/no stacking',overcharge),('jammer spawn/flight/jam/removal/bounty/cap',jammers),('mastery price/damage/reserve/refund/snapshot',mastery),('all map geometry/snapshot/host picker/full wall targets',map_geometry),('endless formulas/ready/full walls',endless_and_ready),('atomic economy',economy),('reservation replacement/expiry/drop',replacement),
                 ('all 10 waves x 1/2/3/4 players',scales),('damage/armor/freeze/repair costs',combat),
                 ('wall queue and single attacker',queues),('build/branch/reserve/sale menus',menus),
                 ('exclusive repair/rebuild/markers',repair_and_markers),('endless phases/defeat/carrier',waves_and_outcomes),

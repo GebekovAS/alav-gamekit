@@ -1,6 +1,7 @@
 """Authoritative, kit-free rules for Copper Watch v1."""
 import math
 import os
+import random
 
 from maps import MAPS, lane
 PADS = MAPS[0]['pads']
@@ -24,6 +25,29 @@ WAVES = [(12,6,0,0,0,0,25),(20,8,4,0,0,0,30),(30,8,6,1,0,0,35),
          (60,14,14,6,2,1,0)]
 BUTTONS = ['UP','DOWN','LEFT','RIGHT','A','B','X','Y','L1','R1','START','SELECT']
 UP,DOWN,LEFT,RIGHT,A,B,X,Y,L1,R1,START,SELECT = [1<<i for i in range(12)]
+OVERCHARGE_HOLD=.3
+JAMMER_BOUNTY=8
+
+
+def jammer_count(wave,players):
+    if wave<12:return 0
+    base=1+min(3,(wave-12)*3//13)
+    return math.ceil(base*(.75,1,1.25,1.5)[max(1,min(4,players))-1])
+
+
+def stars(t):
+    return t[3] if len(t)>3 else 0
+
+
+def star_price(index,count):
+    base=sum(TOWERS[k][0] for k in (index//4*4,index//4*4+1,index))
+    # Exact round-to-even without a floating-point ceiling on mastery levels.
+    denominator=2**(count+1);whole,remainder=divmod(base*3**count,denominator)
+    return whole+int(remainder*2>denominator or (remainder*2==denominator and whole%2))
+
+
+def tower_damage(t):
+    return TOWERS[t[0]][1]*(1+.15*stars(t))
 
 
 def enemy_kind(ident):
@@ -94,9 +118,9 @@ def free_cash(bank, except_pid=None):
     return bank['cash']-sum(r[2] for pid,r in bank['r'].items() if pid!=except_pid)
 
 
-def transaction(bank, pid, pad, index, now, reserve=False, sell=False):
+def transaction(bank, pid, pad, index, now, reserve=False, sell=False, price=None):
     """Host serializes calls; failure never changes cash or the previous reservation."""
-    price=0 if sell else TOWERS[index][0]
+    price=0 if sell else TOWERS[index][0] if price is None else price
     for owner,r in bank['r'].items():
         if owner!=pid and r[0]==pad:return 'Занято игроком %d'%(bank.get('seats',{}).get(owner,int(owner))+1)
     old=bank['r'].get(pid)
@@ -159,6 +183,8 @@ class Match:
         self.ordered=[];self.proposed={};self.positions={};self.points={}
         self.order_dirty=True;self.order_source=self.enemies
         self.spawn_interval=.65
+        self.over={};self.jammers=[];self.jammer_pending=0;self.jammer_clock=0.
+        self.rng=random.Random(1300+map_id)
         # Opt-in measurement fixture only; never used by ordinary rooms.
         value=os.environ.get('COOP_DEBUG_WAVE','0')
         self.debug_wave=max(0,min(999,int(value))) if value.isdecimal() else 0
@@ -169,7 +195,8 @@ class Match:
             i=next(slot for slot in range(4) if slot not in used)
             self.bank['seats'][pid]=i
             self.players[pid]={'x':float(self.map['spawns'][i][0]),'y':float(self.map['spawns'][i][1]),'fx':1,'fy':0,
-                'slot':i,'menu':'','sel':0,'target':-1,'ready':False,'msg':'','until':0.,'mark':-10.}
+                'slot':i,'menu':'','sel':0,'target':-1,'ready':False,'msg':'','until':0.,'mark':-10.,
+                'a_pad':-1,'a_time':0.,'unjam':-1,'b_time':0.}
 
     def choose_map(self,map_id):
         if self.phase!='room':return
@@ -202,6 +229,7 @@ class Match:
         if early and self.phase=='break':self.bank['cash']+=max(0,int(self.timer))
         self.wave+=1;self.wave_players=len(self.players)
         counts,self.bonus=scaled_wave(self.wave,self.wave_players)
+        self.jammer_pending=jammer_count(self.wave,self.wave_players);self.jammer_clock=2.
         self.spawn_interval=min(.65,35/max(1,sum(counts)))
         # Interleave the types so counters matter throughout the release.
         self.pending=[]
@@ -213,27 +241,37 @@ class Match:
             p['ready']=False
 
     def targets(self,p):
+        key=(self.map_id,p['x'],p['y'],p['fx'],p['fy'],self.walls[0]>=150,self.walls[1]>=150)
+        if p.get('_targets_key')==key:return p['_targets']
         choices=[]
         for i,(x,y) in enumerate(self.map['pads']+self.map['walls']):
             dx=x-p['x'];dy=y-p['y'];d=dx*dx+dy*dy
             if i>=8 and self.walls[i-8]>=150:continue
             if d<=42*42:choices.append((d,-(dx*p['fx']+dy*p['fy']),i))
-        return [v[2] for v in sorted(choices)]
+        result=[v[2] for v in sorted(choices)]
+        p['_targets_key']=key;p['_targets']=result
+        return result
 
     def options(self,p):
         target=p['target']
-        return upgrade_options(self.towers[target][0] if self.towers[target] else None) if 0<=target<8 else []
+        if not 0<=target<8:return []
+        t=self.towers[target]
+        return [12+stars(t)] if t and t[0]%4>=2 else upgrade_options(t[0] if t else None)
+
+    def price(self,pad,index):
+        return star_price(self.towers[pad][0],index-12) if index>=12 else TOWERS[index][0]
 
     def buy(self,pid,index,reserve=False):
         p=self.players[pid];pad=p['target']
         if pad not in self.targets(p):self.say(pid,'Подойдите к месту');return
         if index not in self.options(p):self.say(pid,'Башня уже изменена');return
-        error=transaction(self.bank,pid,pad,index,self.time,reserve)
+        price=self.price(pad,index)
+        error=transaction(self.bank,pid,pad,index,self.time,reserve,price=price)
         if error:self.say(pid,error);return
         if reserve:self.say(pid,'Резерв 15 с');p['menu']='';return
         old=self.towers[pad]
-        spent=(old[1] if old else 0)+TOWERS[index][0]
-        self.towers[pad]=[index,spent,0.]
+        spent=(old[1] if old else 0)+price
+        self.towers[pad]=[old[0],spent,old[2],stars(old)+1] if index>=12 else [index,spent,0.,0]
         # A tower may be built under a worker; move that worker onto free ground.
         blockers=[(self.map['core'][0]-15,self.map['core'][1]-15,30,30)]+[(self.map['pads'][i][0]-15,self.map['pads'][i][1]-15,30,30) for i,t in enumerate(self.towers) if t]
         for q in self.players.values():
@@ -242,7 +280,7 @@ class Match:
                 for nx,ny in [(x-38,y),(x+38,y),(x,y-38),(x,y+38)]:
                     if 42<=nx<=568 and 67<=ny<=387 and not any(self.hit((nx-9,ny-10,18,20),b) for b in blockers):
                         q['x'],q['y']=nx,ny;break
-        self.spent+=TOWERS[index][0];p['menu']='';self.say(pid,'Построено')
+        self.spent+=price;p['menu']='';self.say(pid,'Мастерство +1' if index>=12 else 'Построено')
 
     def sell_request(self,pid):
         p=self.players[pid];pad=p['sel']%8;t=self.towers[pad]
@@ -251,12 +289,27 @@ class Match:
         if r and r[0]==pad and r[4]:
             if pad not in self.targets(p):self.say(pid,'Для продажи подойдите к месту');return
             self.bank['cash']+=refund(t[1]);self.towers[pad]=None
+            self.jammers[:]=[j for j in self.jammers if not (j[3]==pad and j[5])]
             self.bank['r'].pop(pid,None);self.say(pid,'Продано: +%d'%refund(t[1]));return
         error=transaction(self.bank,pid,pad,t[0],self.time,True,True)
         self.say(pid,error or 'Продажа в плане: A рядом с местом')
 
     def action(self,pid,held,pressed,dt):
         p=self.players[pid]
+        # Built towers: release before .3s opens the menu; a long hold consumes A.
+        tap=False
+        if not p['menu'] and self.phase in ('prep','break','wave'):
+            choices=self.targets(p) if pressed&A or (p['a_pad']>=0 and not held&A) else None
+            target=p['target'] if choices is None or p['target'] in choices else choices[0] if choices else -1
+            if pressed&A and 0<=target<8 and self.towers[target]:
+                p['a_pad']=target;p['a_time']=0.;pressed&=~A
+            if p['a_pad']>=0:
+                if held&A:p['a_time']+=dt
+                else:
+                    tap=p['a_time']<OVERCHARGE_HOLD and p['a_pad']==target
+                    p['a_pad']=-1;p['a_time']=0.
+            if tap:pressed|=A
+        else:p['a_pad']=-1;p['a_time']=0.
         if pressed&START and not held&SELECT and self.phase in ('prep','break'):
             p['ready']=not p['ready']
             return
@@ -318,11 +371,19 @@ class Match:
                 owner=next((i for i,r in self.bank['r'].items() if r[0]==target and i!=pid),None)
                 if owner:self.say(owner,'Игрок %d: нужны деньги'%(p['slot']+1))
         # Ownership persists only while the button is held beside the same wall.
-        if not p['menu'] and held&B:
+        jam=next((j for j in self.jammers if j[5] and j[3] in choices),None) if not p['menu'] and held&B else None
+        if jam:
+            pad=jam[3];p['target']=pad
+            p['b_time']=p['b_time']+dt if p['unjam']==pad else dt;p['unjam']=pad
+            if p['b_time']>=1-1e-9:
+                self.jammers.remove(jam);self.bank['cash']+=JAMMER_BOUNTY
+                p['unjam']=-1;p['b_time']=0.;self.say(pid,'Глушилка снята: +%d'%JAMMER_BOUNTY)
+        else:p['unjam']=-1;p['b_time']=0.
+        if not jam and not p['menu'] and held&B:
             wall_choices=[t for t in choices if t>=8]
             if wall_choices:p['target']=wall_choices[0]
         w=p['target']-8
-        if not p['menu'] and held&B and w in (0,1) and p['target'] in choices and self.walls[w]<150:
+        if not jam and not p['menu'] and held&B and w in (0,1) and p['target'] in choices and self.walls[w]<150:
             r=self.repairs.get(w)
             if r and r[0]!=pid:self.say(pid,'Уже чинит игрок %d'%(self.players.get(r[0],{}).get('slot',0)+1))
             else:
@@ -336,6 +397,20 @@ class Match:
         self.spawned+=1;self.serial+=1;ident=self.serial*8+kind
         self.enemies.append([ident,progress,enemy_hp(kind,self.wave),0.,0.,0.,0.,0.,{}])
         self.order_dirty=True
+
+    def spawn_jammer(self):
+        if len(self.enemies)+len(self.jammers)>=64:return False
+        used={j[3] for j in self.jammers}
+        pads=[i for i,t in enumerate(self.towers) if t and i not in used]
+        if not pads:return False
+        # Random among the strongest three unclaimed towers, weighted by investment.
+        pads.sort(key=lambda i:self.towers[i][1],reverse=True)
+        pad=self.rng.choices(pads[:3],weights=[max(1,self.towers[i][1]) for i in pads[:3]])[0]
+        edge=self.rng.randrange(4);v=self.rng.uniform(40,560)
+        x,y=((0,v*.65+40),(600,v*.65+40),(v,32),(v,440))[edge]
+        self.serial+=1
+        self.jammers.append([self.serial*8+6,x,y,pad,enemy_hp(1,self.wave),False])
+        return True
 
     def progress_order(self):
         # Reuse the previous order: insertion repair is linear when nobody passes.
@@ -368,6 +443,12 @@ class Match:
         for pid in sorted(self.players,key=int):
             held,pressed=inputs.get(pid,(0,0))
             self.action(pid,held,pressed,dt)
+        self.over.clear()
+        for pid,p in self.players.items():
+            pad=p['a_pad']
+            if (not p['menu'] and inputs.get(pid,(0,0))[0]&A and p['a_time']>=OVERCHARGE_HOLD
+                    and 0<=pad<8 and self.towers[pad] and pad in self.targets(p)):
+                self.over.setdefault(pad,pid)
         if self.phase=='room':
             if self.players and all(p['ready'] for p in self.players.values()):self.start()
             return
@@ -393,18 +474,31 @@ class Match:
             r[1]=0
         if self.phase!='wave':return
         self.timer+=dt;self.spawn_clock-=dt
-        if self.pending and len(self.enemies)<64 and self.spawn_clock<=0:
+        self.jammer_clock-=dt
+        if self.jammer_pending and len(self.enemies)+len(self.jammers)<64 and self.jammer_clock<=0:
+            self.spawn_jammer();self.jammer_pending-=1;self.jammer_clock=6.
+        for j in self.jammers[:]:
+            if j[5]:continue
+            if not self.towers[j[3]]:
+                self.jammers.remove(j);self.spawn_jammer();continue
+            x,y=self.map['pads'][j[3]];dx=x-j[1];dy=y-j[2];distance=math.hypot(dx,dy)
+            if distance<=100*dt:j[1],j[2],j[5]=x,y,True
+            else:j[1]+=dx/distance*100*dt;j[2]+=dy/distance*100*dt
+        jammed={j[3] for j in self.jammers if j[5]}
+        if self.pending and len(self.enemies)+len(self.jammers)<64 and self.spawn_clock<=0:
             kind,progress=self.pending.pop(0);self.spawn(kind,progress)
             self.spawn_clock=self.spawn_interval
         proposed=self.proposed;proposed.clear()
         for e in self.enemies:
-            kind=enemy_kind(e[0]);e[5]=max(0,e[5]-dt)
+            kind=enemy_kind(e[0])
+            if e[5]>0:e[5]=max(0,e[5]-dt)
             if e[8]:
                 for strength in tuple(e[8]):
                     if e[8][strength]<=self.time:del e[8][strength]
-            e[4]=max(e[8],default=0)
-            e[3]=max(e[8].values(),default=self.time)-self.time
-            speed=slow_speed(ENEMIES[kind][2],e[4],kind==5,e[5]>0)
+                e[4]=max(e[8],default=0)
+                e[3]=max(e[8].values(),default=self.time)-self.time
+            else:e[4]=0;e[3]=0.
+            speed=0 if e[5]>0 else ENEMIES[kind][2]*(1-e[4]*(.5 if kind==5 else 1))
             proposed[e[0]]=e[1]+speed*dt
         ordered=self.progress_order()
         positions,attackers=wall_queue(ordered,proposed,self.walls,self.positions,self.map['gates'])
@@ -414,7 +508,7 @@ class Match:
         due=False
         for pad,t in enumerate(self.towers):
             self.scan_due[pad]-=dt
-            if t:t[2]-=dt
+            if t:t[2]-=dt*(1.5 if pad in self.over else 1)
             if self.scan_due[pad]<=0:due=True
         if due:
             armor_bonus=wave_stats(self.wave)[1]
@@ -424,9 +518,16 @@ class Match:
             for pad,t in enumerate(self.towers):
                 if self.scan_due[pad]>0:continue
                 self.scan_due[pad]+=.1
-                if t is None or t[2]>0:continue
+                if t is None or t[2]>0 or pad in jammed:continue
                 index=t[0];price,amount,interval,radius,blast,slow,seconds=TOWERS[index]
+                amount=tower_damage(t)
                 x,y=self.map['pads'][pad]
+                flyer=next((j for j in self.jammers if not j[5] and (j[1]-x)**2+(j[2]-y)**2<=radius*radius),None)
+                if flyer:
+                    flyer[4]-=amount;self.effect(index,(x,y-16),(flyer[1],flyer[2]))
+                    t[2]=max(-.1,t[2])+interval
+                    if flyer[4]<=0:self.jammers.remove(flyer);self.bank['cash']+=JAMMER_BOUNTY;self.kills+=1
+                    continue
                 target=next((e for e in ordered if e[2]>0 and (points[e[0]][0]-x)**2+(points[e[0]][1]-y)**2<=radius*radius),None)
                 if target is None:continue
                 tx,ty=points[target[0]]
@@ -457,10 +558,10 @@ class Match:
                 if kind==4:
                     for j in range(6):
                         if self.wave>10 and self.spawned+len(self.pending)>=130:break
-                        if len(self.enemies)<64:self.spawn(0,max(0,e[1]-j*3))
+                        if len(self.enemies)+len(self.jammers)<64:self.spawn(0,max(0,e[1]-j*3))
                         else:self.pending.insert(0,(0,max(0,e[1]-j*3)))
         if self.core<=0:self.phase='defeat'
-        elif not self.enemies and not self.pending:
+        elif not self.enemies and not self.pending and not self.jammer_pending and not any(not j[5] for j in self.jammers):
             self.bank['cash']+=self.bonus
             if self.wave%10==0:self.banner_until=self.time+2
             self.phase='break';self.timer=40
@@ -479,7 +580,9 @@ class Match:
                 row.extend([round(max(0,e[2]),1),2 if e[5]>0 else 1 if e[3]>0 else 3 if e[6]>self.time else 4 if e[7]>self.time else 0])
             enemies.append(row)
         return {'map':self.map_id,'banner':self.wave if self.time<self.banner_until else 0,'team':self.wave_players,'s':self.phase,'n':self.wave,'c':self.bank['cash'],'h':self.core,'tm':round(self.timer,1),
-                'now':round(self.time,2),'p':ps,'e':enemies,'t':[t[:2] if t else None for t in self.towers],
+                'now':round(self.time,2),'p':ps,'e':enemies,'t':[t[:2]+[stars(t)] if t else None for t in self.towers],
+                'oc':{str(pad):pid for pad,pid in self.over.items()},
+                'j':[[j[0],j[3]] if j[5] else [j[0],round(j[1],1),round(j[2],1)] for j in self.jammers],
                 'w':[round(h) for h in self.walls],'r':self.bank['r'],'m':self.markers,
                 'fix':{str(w):r[0] for w,r in self.repairs.items()},'fx':self.effects,
                 'stats':[int(self.elapsed),self.kills,self.spent]}
